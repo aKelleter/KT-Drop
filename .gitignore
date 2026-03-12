@@ -13,3 +13,5 @@
 /storage/tmp/*
 !/storage/tmp/.gitkeep
 
+/database/*
+
