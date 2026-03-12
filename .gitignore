@@ -1,5 +1,15 @@
-# Empêcher de mettre les fichier de storage dans le dépôt
-/storage/files/
-/storage/logs/
-/storage/tmp/
+/storage/*
+!/storage/.gitkeep
+!/storage/files/
+!/storage/log/
+!/storage/tmp/
+
+/storage/files/*
+!/storage/files/.gitkeep
+
+/storage/log/*
+!/storage/log/.gitkeep
+
+/storage/tmp/*
+!/storage/tmp/.gitkeep
 
