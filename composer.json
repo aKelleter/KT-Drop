@@ -1,0 +1,17 @@
+{
+    "name": "alain/kt-drop",
+    "description": "KT-Drop V21 - Self hosted file drop",
+    "type": "project",
+    "require": {
+        "php": "^8.3",
+        "ext-pdo": "*",
+        "ext-sqlite3": "*",
+        "ext-fileinfo": "*",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    }
+}
