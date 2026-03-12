@@ -1,0 +1,5 @@
+# Empêcher de mettre les fichier de storage dans le dépôt
+/storage/files/
+/storage/logs/
+/storage/tmp/
+
