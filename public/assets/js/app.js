@@ -3,6 +3,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('file-input');
     const pickBtn = document.getElementById('pick-file-btn');
     const selectedFile = document.getElementById('selected-file');
+    const uploadForm = document.getElementById('upload-form');
+    const submitBtn = document.getElementById('upload-submit-btn');
+
+    const progressWrapper = document.getElementById('upload-progress-wrapper');
+    const progressBar = document.getElementById('upload-progress-bar');
+    const statusText = document.getElementById('upload-status-text');
 
     if (dropzone && input) {
         const updateLabel = () => {
@@ -14,14 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         if (pickBtn) {
-            pickBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                input.click();
-            });
+            pickBtn.addEventListener('click', () => input.click());
         }
 
         dropzone.addEventListener('click', (e) => {
-            if (e.target !== pickBtn) {
+            if (e.target.tagName !== 'BUTTON') {
                 input.click();
             }
         });
@@ -46,6 +49,70 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         input.addEventListener('change', updateLabel);
+    }
+
+    if (uploadForm && input && progressWrapper && progressBar && statusText) {
+        uploadForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            if (!input.files || input.files.length === 0) {
+                alert('Veuillez sélectionner un fichier.');
+                return;
+            }
+
+            const formData = new FormData(uploadForm);
+            const xhr = new XMLHttpRequest();
+
+            progressWrapper.classList.remove('d-none');
+            uploadForm.classList.add('upload-is-busy');
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+            }
+
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
+            statusText.textContent = 'Upload en cours...';
+
+            xhr.open('POST', uploadForm.action, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+            xhr.upload.addEventListener('progress', (event) => {
+                if (event.lengthComputable) {
+                    const percent = Math.round((event.loaded / event.total) * 100);
+                    progressBar.style.width = `${percent}%`;
+                    progressBar.textContent = `${percent}%`;
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    progressBar.style.width = '100%';
+                    progressBar.textContent = '100%';
+                    statusText.textContent = 'Upload terminé.';
+
+                    setTimeout(() => {
+                        window.location.href = '?action=dashboard';
+                    }, 500);
+                } else {
+                    statusText.textContent = 'Erreur pendant l’upload.';
+                    uploadForm.classList.remove('upload-is-busy');
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                    }
+                }
+            });
+
+            xhr.addEventListener('error', () => {
+                statusText.textContent = 'Erreur réseau pendant l’upload.';
+                uploadForm.classList.remove('upload-is-busy');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                }
+            });
+
+            xhr.send(formData);
+        });
     }
 
     const alerts = document.querySelectorAll('.alert');

@@ -34,6 +34,25 @@
                     <button type="submit" class="btn btn-orange w-100 fw-semibold">
                         Envoyer
                     </button>
+                    
+                    <div id="upload-progress-wrapper" class="upload-progress-wrapper d-none mt-3">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <div id="upload-spinner" class="spinner-border spinner-border-sm text-warning" role="status" aria-hidden="true"></div>
+                            <span id="upload-status-text" class="small app-muted">Upload en cours...</span>
+                        </div>
+
+                        <div class="progress upload-progress-bar-wrap" role="progressbar" aria-label="Progression de l'upload" aria-valuemin="0" aria-valuemax="100">
+                            <div
+                                id="upload-progress-bar"
+                                class="progress-bar upload-progress-bar"
+                                style="width: 0%;"
+                            >
+                                0%
+                            </div>
+                        </div>
+                    </div>
+                    
+
                 </form>
             </div>
         </div>

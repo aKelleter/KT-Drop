@@ -35,12 +35,34 @@ final class FileController
 
     public function upload(): void
     {
+        $isAjax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
+
         if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            if ($isAjax) {
+                http_response_code(400);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Jeton CSRF invalide.',
+                ]);
+                return;
+            }
+
             Flash::set('danger', 'Jeton CSRF invalide.');
             Response::redirect('?action=dashboard');
         }
 
         if (!isset($_FILES['file'])) {
+            if ($isAjax) {
+                http_response_code(400);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Aucun fichier envoyé.',
+                ]);
+                return;
+            }
+
             Flash::set('danger', 'Aucun fichier envoyé.');
             Response::redirect('?action=dashboard');
         }
@@ -62,8 +84,27 @@ final class FileController
                 'created_at' => date('Y-m-d H:i:s'),
             ]);
 
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Fichier uploadé avec succès.',
+                ]);
+                return;
+            }
+
             Flash::set('success', 'Fichier uploadé avec succès.');
         } catch (\Throwable $e) {
+            if ($isAjax) {
+                http_response_code(400);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ]);
+                return;
+            }
+
             Flash::set('danger', $e->getMessage());
         }
 

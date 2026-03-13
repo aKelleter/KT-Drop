@@ -6,6 +6,7 @@ use App\Core\View;
 
 $appName = Config::get('APP_NAME', 'KT-Drop V2');
 $appVersion = Config::get('APP_VERSION', '0.0.0');
+$appUpd = Config::get('APP_UPD', '0.0.0');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -52,7 +53,7 @@ $appVersion = Config::get('APP_VERSION', '0.0.0');
     <footer class="app-footer">
         <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2">
             <span><?= View::e((string) $appName) ?></span>
-            <span>Version <?= View::e((string) $appVersion) ?></span>
+            <span>Version <?= View::e((string) $appVersion) ?> - <?= View::e((string) $appUpd) ?></span>
         </div>
     </footer>
 </div>
