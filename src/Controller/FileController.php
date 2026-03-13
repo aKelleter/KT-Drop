@@ -18,6 +18,21 @@ final class FileController
     {
         $repo = new FileRepository();
         $search = trim($_GET['search'] ?? '');
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $perPage = max(1, min(100, (int) Config::get('FILES_PER_PAGE', 10)));
+
+        $totalFiles = $repo->countAll($search);
+        $totalPages = max(1, (int) ceil($totalFiles / $perPage));
+
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+
+        $offset = ($page - 1) * $perPage;
+        $files = $repo->findPaginated($perPage, $offset, $search);
+
+        $startItem = $totalFiles > 0 ? $offset + 1 : 0;
+        $endItem = min($offset + count($files), $totalFiles);
 
         $phpMax = View::phpUploadMaxBytes();
         $appMax = (int) Config::get('MAX_UPLOAD_SIZE', 104857600);
@@ -25,10 +40,16 @@ final class FileController
 
         View::render('file/dashboard', [
             'user' => Auth::user(),
-            'files' => $repo->all($search),
+            'files' => $files,
             'csrf' => Csrf::token(),
             'flash' => Flash::get(),
             'search' => $search,
+            'page' => $page,
+            'perPage' => $perPage,
+            'totalFiles' => $totalFiles,
+            'totalPages' => $totalPages,
+            'startItem' => $startItem,
+            'endItem' => $endItem,
             'maxUploadSize' => View::formatBytes($effectiveMax),
         ]);
     }

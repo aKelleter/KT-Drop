@@ -25,7 +25,7 @@ $appUpd = Config::get('APP_UPD', '0.0.0');
 <body class="app-body">
 
 <div class="app-shell">
-    <nav class="navbar navbar-expand-lg app-navbar">
+    <nav class="navbar navbar-expand-lg app-navbar app-navbar-fixed">
         <div class="container">
             <a class="navbar-brand app-brand" href="?action=dashboard">
                 <?= View::e((string) $appName) ?>

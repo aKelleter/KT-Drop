@@ -15,9 +15,9 @@
                 <form method="post" action="?action=upload" enctype="multipart/form-data" id="upload-form">
                     <input type="hidden" name="_csrf" value="<?= View::e($csrf) ?>">
 
-                   <div id="dropzone" class="dropzone mb-3 rounded-4 p-4 text-center">
-                        <p class="mb-2 fw-semibold app-dropzone-title">Glisse ton fichier ici</p>
-                        <p class="small app-muted mb-2">ou clique pour le sélectionner</p>
+                    <div id="dropzone" class="dropzone mb-3 rounded-4 p-4 text-center">
+                        <p class="mb-2 fw-semibold app-dropzone-title">Glissez votre fichier ici</p>
+                        <p class="small app-muted mb-2">ou cliquez pour le sélectionner</p>
                         <p class="small app-muted mb-3">
                             Taille maximale autorisée : <strong><?= View::e($maxUploadSize ?? '') ?></strong>
                         </p>
@@ -34,14 +34,20 @@
                     <button type="submit" class="btn btn-orange w-100 fw-semibold">
                         Envoyer
                     </button>
-                    
+
                     <div id="upload-progress-wrapper" class="upload-progress-wrapper d-none mt-3">
                         <div class="d-flex align-items-center gap-2 mb-2">
                             <div id="upload-spinner" class="spinner-border spinner-border-sm text-warning" role="status" aria-hidden="true"></div>
                             <span id="upload-status-text" class="small app-muted">Upload en cours...</span>
                         </div>
 
-                        <div class="progress upload-progress-bar-wrap" role="progressbar" aria-label="Progression de l'upload" aria-valuemin="0" aria-valuemax="100">
+                        <div
+                            class="progress upload-progress-bar-wrap"
+                            role="progressbar"
+                            aria-label="Progression de l'upload"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                        >
                             <div
                                 id="upload-progress-bar"
                                 class="progress-bar upload-progress-bar"
@@ -51,8 +57,6 @@
                             </div>
                         </div>
                     </div>
-                    
-
                 </form>
             </div>
         </div>
@@ -63,11 +67,12 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                     <h2 class="h5 mb-0 app-section-title">Fichiers déposés</h2>
-                    <span class="badge app-badge"><?= count($files) ?> fichier(s)</span>
+                    <span class="badge app-badge"><?= (int) ($totalFiles ?? count($files)) ?> fichier(s)</span>
                 </div>
 
                 <form method="get" action="" class="search-form mb-3">
                     <input type="hidden" name="action" value="dashboard">
+                    <input type="hidden" name="page" value="1">
 
                     <div class="row g-2">
                         <div class="col-md-8">
@@ -85,7 +90,7 @@
                             </button>
 
                             <?php if (!empty($search)): ?>
-                                <a href="?action=dashboard" class="btn btn-outline-secondary">
+                                <a href="?action=dashboard&page=1" class="btn btn-outline-secondary">
                                     Reset
                                 </a>
                             <?php endif; ?>
@@ -102,7 +107,7 @@
                         <?php endif; ?>
                     </div>
                 <?php else: ?>
-                    <div>
+                    <div class="table-responsive">
                         <table class="table app-table align-middle mb-0">
                             <thead>
                                 <tr>
@@ -152,6 +157,84 @@
                             <?php endforeach; ?>
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+                        <div class="small app-muted">
+                            Affichage de <?= (int) ($startItem ?? 0) ?> à <?= (int) ($endItem ?? 0) ?>
+                            sur <?= (int) ($totalFiles ?? count($files)) ?> fichier(s)
+                        </div>
+
+                        <?php if (($totalPages ?? 1) > 1): ?>
+                            <?php
+                            $currentPage = (int) ($page ?? 1);
+                            $lastPage = (int) ($totalPages ?? 1);
+
+                            $startPage = max(1, $currentPage - 2);
+                            $endPage = min($lastPage, $currentPage + 2);
+                            ?>
+
+                            <nav aria-label="Pagination des fichiers">
+                                <ul class="pagination pagination-sm mb-0">
+
+                                    <li class="page-item <?= $currentPage <= 1 ? 'disabled' : '' ?>">
+                                        <a
+                                            class="page-link"
+                                            href="?action=dashboard&search=<?= urlencode($search ?? '') ?>&page=<?= max(1, $currentPage - 1) ?>"
+                                        >
+                                            Précédent
+                                        </a>
+                                    </li>
+
+                                    <?php if ($startPage > 1): ?>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?action=dashboard&search=<?= urlencode($search ?? '') ?>&page=1">1</a>
+                                        </li>
+
+                                        <?php if ($startPage > 2): ?>
+                                            <li class="page-item disabled">
+                                                <span class="page-link">…</span>
+                                            </li>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+
+                                    <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                                        <li class="page-item <?= $i === $currentPage ? 'active' : '' ?>">
+                                            <a
+                                                class="page-link"
+                                                href="?action=dashboard&search=<?= urlencode($search ?? '') ?>&page=<?= $i ?>"
+                                            >
+                                                <?= $i ?>
+                                            </a>
+                                        </li>
+                                    <?php endfor; ?>
+
+                                    <?php if ($endPage < $lastPage): ?>
+                                        <?php if ($endPage < $lastPage - 1): ?>
+                                            <li class="page-item disabled">
+                                                <span class="page-link">…</span>
+                                            </li>
+                                        <?php endif; ?>
+
+                                        <li class="page-item">
+                                            <a class="page-link" href="?action=dashboard&search=<?= urlencode($search ?? '') ?>&page=<?= $lastPage ?>">
+                                                <?= $lastPage ?>
+                                            </a>
+                                        </li>
+                                    <?php endif; ?>
+
+                                    <li class="page-item <?= $currentPage >= $lastPage ? 'disabled' : '' ?>">
+                                        <a
+                                            class="page-link"
+                                            href="?action=dashboard&search=<?= urlencode($search ?? '') ?>&page=<?= min($lastPage, $currentPage + 1) ?>"
+                                        >
+                                            Suivant
+                                        </a>
+                                    </li>
+
+                                </ul>
+                            </nav>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
             </div>
