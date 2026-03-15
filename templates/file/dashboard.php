@@ -1,8 +1,37 @@
-<?php use App\Core\View; ?>
+<?php
+use App\Core\View;
+
+$fileList         = is_array($files ?? null) ? $files : [];
+$searchTerm       = trim((string) ($search ?? ''));
+$totalFileCount   = (int) ($totalFiles ?? count($fileList));
+$currentPage      = max(1, (int) ($page ?? 1));
+$totalPageCount   = max(1, (int) ($totalPages ?? 1));
+$startItemCount   = (int) ($startItem ?? 0);
+$endItemCount     = (int) ($endItem ?? 0);
+$maxUploadSizeText = (string) ($maxUploadSize ?? '');
+
+$startPage = max(1, $currentPage - 2);
+$endPage   = min($totalPageCount, $currentPage + 2);
+
+$dashboardUrl = static fn (int $pageNumber): string
+    => '?action=dashboard&search=' . urlencode($searchTerm) . '&page=' . $pageNumber;
+
+$formatDate = static function (?string $date): string {
+    if (empty($date)) {
+        return '';
+    }
+
+    $timestamp = strtotime($date);
+
+    return $timestamp !== false
+        ? date('d/m/Y H:i', $timestamp)
+        : $date;
+};
+?>
 
 <?php if (!empty($flash)): ?>
-    <div class="alert text-center alert-<?= View::e($flash['type']) ?> shadow-sm">
-        <?= View::e($flash['message']) ?>
+    <div class="alert text-center alert-<?= View::e($flash['type'] ?? 'info') ?> shadow-sm">
+        <?= View::e($flash['message'] ?? '') ?>
     </div>
 <?php endif; ?>
 
@@ -13,13 +42,14 @@
                 <h2 class="h5 mb-3 app-section-title">Uploader un fichier</h2>
 
                 <form method="post" action="?action=upload" enctype="multipart/form-data" id="upload-form">
-                    <input type="hidden" name="_csrf" value="<?= View::e($csrf) ?>">
+                    <input type="hidden" name="_csrf" value="<?= View::e($csrf ?? '') ?>">
 
                     <div id="dropzone" class="dropzone mb-3 rounded-4 p-4 text-center">
                         <p class="mb-2 fw-semibold app-dropzone-title">Glissez votre fichier ici</p>
                         <p class="small app-muted mb-2">ou cliquez pour le sélectionner</p>
                         <p class="small app-muted mb-3">
-                            Taille maximale autorisée : <strong><?= View::e($maxUploadSize ?? '') ?></strong>
+                            Taille maximale autorisée :
+                            <strong><?= View::e($maxUploadSizeText) ?></strong>
                         </p>
 
                         <input type="file" name="file" id="file-input" class="d-none" required>
@@ -37,7 +67,12 @@
 
                     <div id="upload-progress-wrapper" class="upload-progress-wrapper d-none mt-3">
                         <div class="d-flex align-items-center gap-2 mb-2">
-                            <div id="upload-spinner" class="spinner-border spinner-border-sm text-warning" role="status" aria-hidden="true"></div>
+                            <div
+                                id="upload-spinner"
+                                class="spinner-border spinner-border-sm text-warning"
+                                role="status"
+                                aria-hidden="true"
+                            ></div>
                             <span id="upload-status-text" class="small app-muted">Upload en cours...</span>
                         </div>
 
@@ -67,7 +102,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                     <h2 class="h5 mb-0 app-section-title">Fichiers déposés</h2>
-                    <span class="badge app-badge"><?= (int) ($totalFiles ?? count($files)) ?> fichier(s)</span>
+                    <span class="badge app-badge"><?= $totalFileCount ?> fichier(s)</span>
                 </div>
 
                 <form method="get" action="" class="search-form mb-3">
@@ -81,15 +116,16 @@
                                 name="search"
                                 class="form-control app-input"
                                 placeholder="Rechercher un fichier, une extension ou un utilisateur..."
-                                value="<?= View::e($search ?? '') ?>"
+                                value="<?= View::e($searchTerm) ?>"
                             >
                         </div>
+
                         <div class="col-md-4 d-flex gap-2">
                             <button type="submit" class="btn btn-orange flex-fill">
                                 Rechercher
                             </button>
 
-                            <?php if (!empty($search)): ?>
+                            <?php if ($searchTerm !== ''): ?>
                                 <a href="?action=dashboard&page=1" class="btn btn-outline-secondary">
                                     Reset
                                 </a>
@@ -98,97 +134,108 @@
                     </div>
                 </form>
 
-                <?php if (empty($files)): ?>
+                <?php if (empty($fileList)): ?>
                     <div class="app-muted">
-                        <?php if (!empty($search)): ?>
-                            Aucun résultat pour la recherche <strong><?= View::e($search) ?></strong>.
+                        <?php if ($searchTerm !== ''): ?>
+                            Aucun résultat pour la recherche <strong><?= View::e($searchTerm) ?></strong>.
                         <?php else: ?>
                             Aucun fichier pour le moment.
                         <?php endif; ?>
                     </div>
                 <?php else: ?>
-                    <div class="table-responsive">
-                        <table class="table app-table align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Nom</th>
-                                    <th>Type</th>
-                                    <th>Taille</th>
-                                    <th>Date</th>
-                                    <th>Par</th>
-                                    <th class="text-end">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            <?php foreach ($files as $file): ?>
-                                <tr>
-                                    <td class="fw-semibold">
-                                        <div class="file-name" title="<?= View::e($file['original_name']) ?>">
-                                            <?= View::e($file['original_name']) ?>
-                                        </div>
-                                    </td>
-                                    <td><?= View::e($file['extension']) ?></td>
-                                    <td><?= View::e(View::formatBytes((int) $file['size_bytes'])) ?></td>
-                                    <td><?= View::e($file['created_at']) ?></td>
-                                    <td>
-                                        <div class="uploader-email" title="<?= View::e($file['uploader_email']) ?>">
-                                            <?= View::e($file['uploader_email']) ?>
-                                        </div>
-                                    </td>
-                                    <td class="text-end">
-                                        <div class="file-actions">
-                                            <a
-                                                href="?action=download&id=<?= (int) $file['id'] ?>"
-                                                class="btn btn-sm btn-download"
-                                            >
-                                                Télécharger
-                                            </a>
 
-                                            <form method="post" action="?action=delete" onsubmit="return confirm('Supprimer ce fichier ?');">
-                                                <input type="hidden" name="_csrf" value="<?= View::e($csrf) ?>">
-                                                <input type="hidden" name="id" value="<?= (int) $file['id'] ?>">
-                                                <button type="submit" class="btn btn-sm btn-delete">
-                                                    Supprimer
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                    <div class="files-grid">
+                        <?php foreach ($fileList as $file): ?>
+                            <?php
+                            $fileId        = (int) ($file['id'] ?? 0);
+                            $originalName  = (string) ($file['original_name'] ?? '');
+                            $extension     = (string) ($file['extension'] ?? '');
+                            $sizeBytes     = (int) ($file['size_bytes'] ?? 0);
+                            $createdAt     = (string) ($file['created_at'] ?? '');
+                            $uploaderEmail = (string) ($file['uploader_email'] ?? '');
+                            ?>
+                            <article class="file-card h-100">
+                                <div class="file-card-header">
+                                    <div class="file-card-name" title="<?= View::e($originalName) ?>">
+                                        <?= View::e($originalName) ?>
+                                    </div>
+
+                                    <span class="file-card-type">
+                                        <?= View::e($extension !== '' ? strtoupper($extension) : 'FILE') ?>
+                                    </span>
+                                </div>
+
+                                <div class="file-card-meta">
+                                    <div>
+                                        <span class="meta-label">Taille</span>
+                                        <span><?= View::e(View::formatBytes($sizeBytes)) ?></span>
+                                    </div>
+
+                                    <div>
+                                        <span class="meta-label">Date</span>
+                                        <span><?= View::e($formatDate($createdAt)) ?></span>
+                                    </div>
+
+                                    <div>
+                                        <span class="meta-label">Par</span>
+                                        <span class="uploader-email-mobile" title="<?= View::e($uploaderEmail) ?>">
+                                            <?= View::e($uploaderEmail) ?>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="file-card-actions">
+                                    <a
+                                        href="?action=download&id=<?= $fileId ?>"
+                                        class="btn btn-sm btn-card-action btn-card-download"
+                                        title="Télécharger"
+                                        aria-label="Télécharger <?= View::e($originalName) ?>"
+                                    >
+                                        <i class="bi bi-download"></i>
+                                    </a>
+
+                                    <form
+                                        method="post"
+                                        action="?action=delete"
+                                        onsubmit="return confirm('Supprimer ce fichier ?');"
+                                    >
+                                        <input type="hidden" name="_csrf" value="<?= View::e($csrf ?? '') ?>">
+                                        <input type="hidden" name="id" value="<?= $fileId ?>">
+
+                                        <button
+                                            type="submit"
+                                            class="btn btn-sm btn-card-action btn-card-delete"
+                                            title="Supprimer"
+                                            aria-label="Supprimer <?= View::e($originalName) ?>"
+                                        >
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
                     </div>
 
+                <?php endif; ?>
+                <?php if ($totalFileCount > 0): ?>
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
                         <div class="small app-muted">
-                            Affichage de <?= (int) ($startItem ?? 0) ?> à <?= (int) ($endItem ?? 0) ?>
-                            sur <?= (int) ($totalFiles ?? count($files)) ?> fichier(s)
+                            Affichage de <?= $startItemCount ?> à <?= $endItemCount ?>
+                            sur <?= $totalFileCount ?> fichier(s)
                         </div>
 
-                        <?php if (($totalPages ?? 1) > 1): ?>
-                            <?php
-                            $currentPage = (int) ($page ?? 1);
-                            $lastPage = (int) ($totalPages ?? 1);
-
-                            $startPage = max(1, $currentPage - 2);
-                            $endPage = min($lastPage, $currentPage + 2);
-                            ?>
-
+                        <?php if ($totalPageCount > 1): ?>
                             <nav aria-label="Pagination des fichiers">
                                 <ul class="pagination pagination-sm mb-0">
-
                                     <li class="page-item <?= $currentPage <= 1 ? 'disabled' : '' ?>">
-                                        <a
-                                            class="page-link"
-                                            href="?action=dashboard&search=<?= urlencode($search ?? '') ?>&page=<?= max(1, $currentPage - 1) ?>"
-                                        >
+                                        <a class="page-link" href="<?= View::e($dashboardUrl(max(1, $currentPage - 1))) ?>">
                                             Précédent
                                         </a>
                                     </li>
 
                                     <?php if ($startPage > 1): ?>
                                         <li class="page-item">
-                                            <a class="page-link" href="?action=dashboard&search=<?= urlencode($search ?? '') ?>&page=1">1</a>
+                                            <a class="page-link" href="<?= View::e($dashboardUrl(1)) ?>">1</a>
                                         </li>
 
                                         <?php if ($startPage > 2): ?>
@@ -200,38 +247,31 @@
 
                                     <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
                                         <li class="page-item <?= $i === $currentPage ? 'active' : '' ?>">
-                                            <a
-                                                class="page-link"
-                                                href="?action=dashboard&search=<?= urlencode($search ?? '') ?>&page=<?= $i ?>"
-                                            >
+                                            <a class="page-link" href="<?= View::e($dashboardUrl($i)) ?>">
                                                 <?= $i ?>
                                             </a>
                                         </li>
                                     <?php endfor; ?>
 
-                                    <?php if ($endPage < $lastPage): ?>
-                                        <?php if ($endPage < $lastPage - 1): ?>
+                                    <?php if ($endPage < $totalPageCount): ?>
+                                        <?php if ($endPage < $totalPageCount - 1): ?>
                                             <li class="page-item disabled">
                                                 <span class="page-link">…</span>
                                             </li>
                                         <?php endif; ?>
 
                                         <li class="page-item">
-                                            <a class="page-link" href="?action=dashboard&search=<?= urlencode($search ?? '') ?>&page=<?= $lastPage ?>">
-                                                <?= $lastPage ?>
+                                            <a class="page-link" href="<?= View::e($dashboardUrl($totalPageCount)) ?>">
+                                                <?= $totalPageCount ?>
                                             </a>
                                         </li>
                                     <?php endif; ?>
 
-                                    <li class="page-item <?= $currentPage >= $lastPage ? 'disabled' : '' ?>">
-                                        <a
-                                            class="page-link"
-                                            href="?action=dashboard&search=<?= urlencode($search ?? '') ?>&page=<?= min($lastPage, $currentPage + 1) ?>"
-                                        >
+                                    <li class="page-item <?= $currentPage >= $totalPageCount ? 'disabled' : '' ?>">
+                                        <a class="page-link" href="<?= View::e($dashboardUrl(min($totalPageCount, $currentPage + 1))) ?>">
                                             Suivant
                                         </a>
                                     </li>
-
                                 </ul>
                             </nav>
                         <?php endif; ?>
