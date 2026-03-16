@@ -110,4 +110,10 @@ final class View
             ],
         };
     }
+
+    
+    public static function asset(string $path): string
+    {
+        return 'public/assets/' . ltrim($path, '/');
+    }
 }

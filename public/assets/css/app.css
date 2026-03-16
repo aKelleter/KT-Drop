@@ -1075,3 +1075,39 @@ body.app-body {
     .file-card-header .min-w-0 {
         min-width: 0;
     }
+
+    /** -- Logo -- */
+    .app-brand {
+        text-decoration: none;
+        font-weight: 700;
+        color: inherit;
+    }
+
+    .app-brand:hover {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .app-brand-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: rgba(255, 145, 0, 0.10);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 14px rgba(255, 145, 0, 0.12);
+        flex-shrink: 0;
+    }
+
+    .app-logo {
+        width: 26px;
+        height: 26px;
+        object-fit: contain;
+        display: block;
+    }
+
+    .app-brand-text {
+        font-size: 1.05rem;
+        letter-spacing: 0.2px;
+    }

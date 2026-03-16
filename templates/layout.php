@@ -14,6 +14,7 @@ $appUpd = Config::get('APP_UPD', '0.0.0');
     <meta charset="UTF-8">
     <title><?= View::e((string) $appName) ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="<?= View::asset('img/favicon.png') ?>" type="image/png">
 
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -21,29 +22,36 @@ $appUpd = Config::get('APP_UPD', '0.0.0');
     >
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <link rel="stylesheet" href="public/assets/css/app.css">
+    <link rel="stylesheet" href="<?= View::asset('css/app.css') ?>">
 </head>
 <body class="app-body">
 
 <div class="app-shell">
     <nav class="navbar navbar-expand-lg app-navbar app-navbar-fixed">
-        <div class="container">
-            <a class="navbar-brand app-brand" href="?action=dashboard">
-                <?= View::e((string) $appName) ?>
-            </a>
+    <div class="container">
+        <a class="navbar-brand app-brand d-flex align-items-center gap-2" href="?action=dashboard">
+            <span class="app-brand-icon">
+                <img 
+                    src="<?= View::asset('img/favicon.png') ?>" 
+                    alt="KT-Drop" 
+                    class="app-logo"
+                >
+            </span>
+            <span><?= View::e((string) $appName) ?></span>
+        </a>
 
-            <?php if (Auth::check()): ?>
-                <div class="d-flex align-items-center gap-3">
-                    <span class="small app-user-email">
-                        <?= View::e(Auth::user()['email'] ?? '') ?>
-                    </span>
-                    <a href="?action=logout" class="btn btn-outline-orange btn-sm">
-                        Déconnexion
-                    </a>
-                </div>
-            <?php endif; ?>
-        </div>
-    </nav>
+        <?php if (Auth::check()): ?>
+            <div class="d-flex align-items-center gap-3">
+                <span class="small app-user-email">
+                    <?= View::e(Auth::user()['email'] ?? '') ?>
+                </span>
+                <a href="?action=logout" class="btn btn-outline-orange btn-sm">
+                    Déconnexion
+                </a>
+            </div>
+        <?php endif; ?>
+    </div>
+</nav>
 
     <main class="app-main py-4 py-md-5">
         <div class="container">
@@ -60,6 +68,6 @@ $appUpd = Config::get('APP_UPD', '0.0.0');
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script defer src="public/assets/js/app.js"></script>
+<script defer src="<?= View::asset('js/app.js') ?>"></script>
 </body>
 </html>
