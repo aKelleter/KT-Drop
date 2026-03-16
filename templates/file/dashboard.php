@@ -102,7 +102,49 @@ $formatDate = static function (?string $date): string {
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                     <h2 class="h5 mb-0 app-section-title">Fichiers déposés</h2>
-                    <span class="badge app-badge"><?= $totalFileCount ?> fichier(s)</span>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="dropdown">
+                            <button
+                                class="btn btn-outline-orange btn-sm dropdown-toggle"
+                                type="button"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                            >
+                                Vues
+                            </button>
+
+                            <ul class="dropdown-menu dropdown-menu-end app-dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="?action=dashboard">
+                                        <i class="bi bi-grid-3x3-gap me-2"></i>
+                                        Vue cartes
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <button
+                                        type="button"
+                                        class="dropdown-item"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#simpleFilesListModal"
+                                    >
+                                        <i class="bi bi-list-ul me-2"></i>
+                                        Liste rapide
+                                    </button>
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item" href="?action=files-list">
+                                        <i class="bi bi-file-earmark-text me-2"></i>
+                                        Liste complète
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <span class="badge app-badge"><?= $totalFileCount ?> fichier(s)</span>
+                    </div>
                 </div>
 
                 <form method="get" action="" class="search-form mb-3">
@@ -153,11 +195,22 @@ $formatDate = static function (?string $date): string {
                             $sizeBytes     = (int) ($file['size_bytes'] ?? 0);
                             $createdAt     = (string) ($file['created_at'] ?? '');
                             $uploaderEmail = (string) ($file['uploader_email'] ?? '');
+                            $iconMeta = View::fileIconMeta($extension);
                             ?>
                             <article class="file-card h-100">
-                                <div class="file-card-header">
-                                    <div class="file-card-name" title="<?= View::e($originalName) ?>">
-                                        <?= View::e($originalName) ?>
+                               <div class="file-card-header">
+                                    <div class="d-flex align-items-start gap-2 flex-grow-1 min-w-0">
+                                        <span
+                                            class="file-icon-wrap <?= View::e($iconMeta['class']) ?>"
+                                            title="<?= View::e($iconMeta['label']) ?>"
+                                            aria-hidden="true"
+                                        >
+                                            <i class="<?= View::e($iconMeta['icon']) ?>"></i>
+                                        </span>
+
+                                        <div class="file-card-name" title="<?= View::e($originalName) ?>">
+                                            <?= View::e($originalName) ?>
+                                        </div>
                                     </div>
 
                                     <span class="file-card-type">
@@ -185,6 +238,18 @@ $formatDate = static function (?string $date): string {
                                 </div>
 
                                 <div class="file-card-actions">
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-card-action btn-card-preview js-preview-btn"
+                                        title="Aperçu"
+                                        aria-label="Aperçu <?= View::e($originalName) ?>"
+                                        data-preview-url="?action=preview&id=<?= $fileId ?>"
+                                        data-download-url="?action=download&id=<?= $fileId ?>"
+                                        data-file-name="<?= View::e($originalName) ?>"
+                                    >
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+
                                     <a
                                         href="?action=download&id=<?= $fileId ?>"
                                         class="btn btn-sm btn-card-action btn-card-download"
@@ -212,6 +277,7 @@ $formatDate = static function (?string $date): string {
                                         </button>
                                     </form>
                                 </div>
+
                             </article>
                         <?php endforeach; ?>
                     </div>
@@ -277,6 +343,119 @@ $formatDate = static function (?string $date): string {
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="filePreviewModal" tabindex="-1" aria-labelledby="filePreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content preview-modal-content">
+            <div class="modal-header preview-modal-header">
+                <h5 class="modal-title preview-modal-title" id="filePreviewModalLabel">
+                    Aperçu du fichier
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close preview-modal-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Fermer"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <div id="file-preview-content" class="file-preview-content">
+                    <div class="file-preview-empty">
+                        Sélectionnez un fichier à prévisualiser.
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer preview-modal-footer">
+                <a href="#" id="file-preview-download-link" class="btn btn-orange btn-modal-action d-none">
+                    Télécharger
+                </a>
+
+                <button
+                    type="button"
+                    class="btn btn-outline-orange btn-modal-action"
+                    data-bs-dismiss="modal"
+                >
+                    Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="simpleFilesListModal" tabindex="-1" aria-labelledby="simpleFilesListModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content preview-modal-content">
+            <div class="modal-header preview-modal-header">
+                <h5 class="modal-title preview-modal-title" id="simpleFilesListModalLabel">
+                    Liste simple des fichiers
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close preview-modal-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Fermer"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <?php if (empty($fileList)): ?>
+                    <div class="app-muted">Aucun fichier à afficher.</div>
+                <?php else: ?>
+                    <ul class="simple-file-list">
+                        <?php foreach ($fileList as $file): ?>
+                            <?php
+                            $fileId       = (int) ($file['id'] ?? 0);
+                            $originalName = (string) ($file['original_name'] ?? '');
+                            $extension    = (string) ($file['extension'] ?? '');
+                            $iconMeta = View::fileIconMeta($extension);
+                            ?>
+                            <li class="simple-file-item">
+                                <div class="simple-file-main">
+                                    <span
+                                        class="file-icon-wrap <?= View::e($iconMeta['class']) ?>"
+                                        title="<?= View::e($iconMeta['label']) ?>"
+                                        aria-hidden="true"
+                                    >
+                                        <i class="<?= View::e($iconMeta['icon']) ?>"></i>
+                                    </span>
+
+                                    <span class="simple-file-name" title="<?= View::e($originalName) ?>">
+                                        <?= View::e($originalName) ?>
+                                    </span>
+
+                                    <span class="simple-file-ext">
+                                        <?= View::e($extension !== '' ? strtoupper($extension) : 'FILE') ?>
+                                    </span>
+                                </div>
+
+                                <a
+                                    href="?action=download&id=<?= $fileId ?>"
+                                    class="btn btn-sm btn-outline-orange simple-file-download"
+                                >
+                                    Télécharger
+                                </a>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </div>
+
+            <div class="modal-footer preview-modal-footer">
+                <button
+                    type="button"
+                    class="btn btn-outline-orange btn-modal-action"
+                    data-bs-dismiss="modal"
+                >
+                    Fermer
+                </button>
             </div>
         </div>
     </div>

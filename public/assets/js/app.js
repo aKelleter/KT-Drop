@@ -126,4 +126,98 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 500);
         }, 3000);
     });
+
+     const modalElement = document.getElementById('filePreviewModal');
+
+    if (!modalElement || typeof bootstrap === 'undefined') {
+        return;
+    }
+
+    const modal = new bootstrap.Modal(modalElement);
+    const previewButtons = document.querySelectorAll('.js-preview-btn');
+    const previewContent = document.getElementById('file-preview-content');
+    const previewTitle = document.getElementById('filePreviewModalLabel');
+    const previewDownloadLink = document.getElementById('file-preview-download-link');
+
+    const setLoadingState = () => {
+        previewContent.innerHTML = `
+            <div class="file-preview-loading">
+                <div class="spinner-border text-warning" role="status" aria-hidden="true"></div>
+                <div class="small app-muted mt-3">Chargement de l’aperçu...</div>
+            </div>
+        `;
+    };
+
+    const setErrorState = (message) => {
+        previewContent.innerHTML = `
+            <div class="file-preview-empty">
+                <div class="mb-2"><i class="bi bi-exclamation-circle"></i></div>
+                <div>${message}</div>
+            </div>
+        `;
+    };
+
+    previewButtons.forEach((button) => {
+        button.addEventListener('click', async () => {
+            const previewUrl = button.dataset.previewUrl || '';
+            const downloadUrl = button.dataset.downloadUrl || '#';
+            const fileName = button.dataset.fileName || 'Aperçu du fichier';
+
+            previewTitle.textContent = fileName;
+            previewDownloadLink.href = downloadUrl;
+            previewDownloadLink.classList.remove('d-none');
+
+            setLoadingState();
+            modal.show();
+
+            try {
+                const response = await fetch(previewUrl, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Impossible de charger l’aperçu.');
+                }
+
+                const html = await response.text();
+                previewContent.innerHTML = html;
+            } catch (error) {
+                setErrorState('Impossible de charger l’aperçu du fichier.');
+            }
+        });
+    });
+
+    previewContent.addEventListener('click', (event) => {
+        const image = event.target.closest('.file-preview-image');
+
+        if (!image) {
+            return;
+        }
+
+        const pane = image.closest('.file-preview-pane');
+        const isZoomed = image.classList.toggle('is-zoomed');
+
+        if (pane) {
+            pane.classList.toggle('is-zoomed', isZoomed);
+
+            if (!isZoomed) {
+                pane.scrollTop = 0;
+                pane.scrollLeft = 0;
+            }
+        }
+    });
+
+    modalElement.addEventListener('hidden.bs.modal', () => {
+        previewTitle.textContent = 'Aperçu du fichier';
+        previewContent.innerHTML = `
+            <div class="file-preview-empty">
+                Sélectionnez un fichier à prévisualiser.
+            </div>
+        `;
+        previewDownloadLink.href = '#';
+        previewDownloadLink.classList.add('d-none');
+    });
+    
 });

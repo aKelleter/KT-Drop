@@ -17,6 +17,8 @@ $router->get('dashboard', [FileController::class, 'dashboard']);
 $router->post('upload', [FileController::class, 'upload']);
 $router->get('download', [FileController::class, 'download']);
 $router->post('delete', [FileController::class, 'delete']);
+$router->get('preview', [FileController::class, 'preview']);
+$router->get('files-list', [FileController::class, 'simpleList']);
 
 $action = $_GET['action'] ?? 'dashboard';
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';

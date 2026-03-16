@@ -52,4 +52,62 @@ final class View
 
         return min($uploadMax, $postMax);
     }
+
+    public static function fileIconMeta(?string $extension = null): array
+    {
+        $ext = strtolower(trim((string) $extension));
+
+        return match ($ext) {
+            'pdf' => [
+                'icon' => 'bi bi-file-earmark-pdf',
+                'class' => 'file-icon-pdf',
+                'label' => 'PDF',
+            ],
+            'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp' => [
+                'icon' => 'bi bi-file-earmark-image',
+                'class' => 'file-icon-image',
+                'label' => 'Image',
+            ],
+            'doc', 'docx', 'odt' => [
+                'icon' => 'bi bi-file-earmark-word',
+                'class' => 'file-icon-doc',
+                'label' => 'Document',
+            ],
+            'xls', 'xlsx', 'ods', 'csv' => [
+                'icon' => 'bi bi-file-earmark-spreadsheet',
+                'class' => 'file-icon-sheet',
+                'label' => 'Tableur',
+            ],
+            'txt', 'log', 'md' => [
+                'icon' => 'bi bi-file-earmark-text',
+                'class' => 'file-icon-text',
+                'label' => 'Texte',
+            ],
+            'json', 'xml', 'html', 'css', 'js', 'php' => [
+                'icon' => 'bi bi-file-earmark-code',
+                'class' => 'file-icon-code',
+                'label' => 'Code',
+            ],
+            'zip', 'rar', '7z', 'tar', 'gz' => [
+                'icon' => 'bi bi-file-earmark-zip',
+                'class' => 'file-icon-archive',
+                'label' => 'Archive',
+            ],
+            'mp3', 'wav', 'ogg', 'flac' => [
+                'icon' => 'bi bi-file-earmark-music',
+                'class' => 'file-icon-audio',
+                'label' => 'Audio',
+            ],
+            'mp4', 'mov', 'avi', 'mkv', 'webm' => [
+                'icon' => 'bi bi-file-earmark-play',
+                'class' => 'file-icon-video',
+                'label' => 'Vidéo',
+            ],
+            default => [
+                'icon' => 'bi bi-file-earmark',
+                'class' => 'file-icon-default',
+                'label' => 'Fichier',
+            ],
+        };
+    }
 }

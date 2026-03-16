@@ -1,6 +1,5 @@
 A faire :
 
-- pagination
 - upload multiple
 - aperçu de fichiers
 - renommage
