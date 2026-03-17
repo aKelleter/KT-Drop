@@ -34,6 +34,7 @@ $appUpd = Config::get('APP_UPD', '0.0.0');
                 <img 
                     src="<?= View::asset('img/favicon.png') ?>" 
                     alt="KT-Drop" 
+                    height="32"
                     class="app-logo"
                 >
             </span>
