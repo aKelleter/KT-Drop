@@ -183,10 +183,8 @@ KT-Drop/
 ---
 
 ## Pistes d'évolution
-
-- Partage public de fichiers via lien avec token à durée de vie limitée
+- Gestion multi-utilisateurs avec rôles (éditeur / super-admin)
 - Gestion de quotas par utilisateur
 - Suppression automatique des fichiers après expiration
-- Gestion multi-utilisateurs avec rôles (éditeur / super-admin)
 - Notification email à l'admin lors d'un nouvel upload
 - Export CSV du journal des fichiers

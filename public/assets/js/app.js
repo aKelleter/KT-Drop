@@ -219,5 +219,43 @@ document.addEventListener('DOMContentLoaded', () => {
         previewDownloadLink.href = '#';
         previewDownloadLink.classList.add('d-none');
     });
-    
+
+    // Share modal
+    const shareModalEl = document.getElementById('shareModal');
+    const shareModalBody = document.getElementById('share-modal-body');
+
+    if (shareModalEl && shareModalBody) {
+        shareModalEl.addEventListener('show.bs.modal', (event) => {
+            const trigger = event.relatedTarget;
+            if (!trigger) return;
+
+            const fileId = trigger.dataset.fileId;
+            const contentEl = document.getElementById('share-content-' + fileId);
+
+            shareModalBody.innerHTML = contentEl
+                ? contentEl.innerHTML
+                : '<p class="app-muted">Contenu introuvable.</p>';
+        });
+
+        shareModalEl.addEventListener('hidden.bs.modal', () => {
+            shareModalBody.innerHTML = '<p class="app-muted">Chargement…</p>';
+        });
+
+        shareModalBody.addEventListener('click', (e) => {
+            const btn = e.target.closest('.js-copy-btn');
+            if (!btn) return;
+
+            const text = btn.dataset.copy || '';
+            if (!text) return;
+
+            navigator.clipboard.writeText(text).then(() => {
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.className = 'bi bi-check2';
+                    setTimeout(() => { icon.className = 'bi bi-copy'; }, 1500);
+                }
+            });
+        });
+    }
+
 });

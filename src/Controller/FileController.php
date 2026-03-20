@@ -8,6 +8,7 @@ use App\Core\Csrf;
 use App\Core\Flash;
 use App\Core\Response;
 use App\Repository\FileRepository;
+use App\Repository\ShareRepository;
 use App\Service\FileStorageService;
 use App\Config\Config;
 use App\Core\View;
@@ -38,6 +39,13 @@ final class FileController
         $appMax = (int) Config::get('MAX_UPLOAD_SIZE', 104857600);
         $effectiveMax = min($phpMax, $appMax);
 
+        $shareRepo = new ShareRepository();
+        $sharesByFileId = [];
+        foreach ($files as $f) {
+            $fid = (int) $f['id'];
+            $sharesByFileId[$fid] = $shareRepo->findActiveByFileId($fid);
+        }
+
         View::render('file/dashboard', [
             'user' => Auth::user(),
             'files' => $files,
@@ -51,6 +59,8 @@ final class FileController
             'startItem' => $startItem,
             'endItem' => $endItem,
             'maxUploadSize' => View::formatBytes($effectiveMax),
+            'sharesByFileId' => $sharesByFileId,
+            'appUrl' => rtrim((string) Config::get('APP_URL', ''), '/') . '/',
         ]);
     }
 
@@ -173,6 +183,7 @@ final class FileController
             unlink($file['storage_path']);
         }
 
+        (new ShareRepository())->deleteByFileId($id);
         $repo->delete($id);
 
         Flash::set('success', 'Fichier supprimé.');

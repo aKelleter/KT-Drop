@@ -40,6 +40,19 @@ CREATE TABLE IF NOT EXISTS files (
 );
 ");
 
+$pdo->exec("
+CREATE TABLE IF NOT EXISTS shares (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_id INTEGER NOT NULL,
+    token TEXT NOT NULL UNIQUE,
+    expires_at TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    created_by INTEGER NOT NULL,
+    FOREIGN KEY(file_id) REFERENCES files(id),
+    FOREIGN KEY(created_by) REFERENCES users(id)
+);
+");
+
 $count = (int) $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 
 if ($count === 0) {

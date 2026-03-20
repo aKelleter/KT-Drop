@@ -444,6 +444,21 @@ body.app-body {
     color: #fff;
 }
 
+.file-card-actions .btn-card-share {
+    background: #f0f7ff;
+    color: #0d6efd;
+    border-color: #c5daff;
+}
+
+.file-card-actions .btn-card-share:hover,
+.file-card-actions .btn-card-share:focus {
+    background: #0d6efd;
+    color: #fff;
+    border-color: #0d6efd;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(13, 110, 253, 0.18);
+}
+
 .file-card-actions .btn-card-delete {
     background: #fff5f5;
     color: #dc3545;
@@ -457,6 +472,16 @@ body.app-body {
     border-color: #dc3545;
     transform: translateY(-1px);
     box-shadow: 0 8px 16px rgba(220, 53, 69, 0.18);
+}
+
+.share-link-row {
+    background: var(--app-bg-soft, #f8f9fa);
+    border-radius: 8px;
+    padding: 0.5rem 0.6rem;
+}
+
+.share-modal-file-name {
+    color: var(--app-orange, #ff8c1a);
 }
 
 .file-card-actions .btn-card-action:focus-visible {

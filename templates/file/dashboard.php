@@ -1,14 +1,16 @@
 <?php
 use App\Core\View;
 
-$fileList         = is_array($files ?? null) ? $files : [];
-$searchTerm       = trim((string) ($search ?? ''));
-$totalFileCount   = (int) ($totalFiles ?? count($fileList));
-$currentPage      = max(1, (int) ($page ?? 1));
-$totalPageCount   = max(1, (int) ($totalPages ?? 1));
-$startItemCount   = (int) ($startItem ?? 0);
-$endItemCount     = (int) ($endItem ?? 0);
+$fileList          = is_array($files ?? null) ? $files : [];
+$searchTerm        = trim((string) ($search ?? ''));
+$totalFileCount    = (int) ($totalFiles ?? count($fileList));
+$currentPage       = max(1, (int) ($page ?? 1));
+$totalPageCount    = max(1, (int) ($totalPages ?? 1));
+$startItemCount    = (int) ($startItem ?? 0);
+$endItemCount      = (int) ($endItem ?? 0);
 $maxUploadSizeText = (string) ($maxUploadSize ?? '');
+$sharesByFileId    = is_array($sharesByFileId ?? null) ? $sharesByFileId : [];
+$appUrl            = rtrim((string) ($appUrl ?? ''), '/') . '/';
 
 $startPage = max(1, $currentPage - 2);
 $endPage   = min($totalPageCount, $currentPage + 2);
@@ -140,6 +142,15 @@ $formatDate = static function (?string $date): string {
                                         Liste complète
                                     </a>
                                 </li>
+
+                                <li><hr class="dropdown-divider"></li>
+
+                                <li>
+                                    <a class="dropdown-item" href="?action=shares">
+                                        <i class="bi bi-share me-2"></i>
+                                        Partages actifs
+                                    </a>
+                                </li>
                             </ul>
                         </div>
 
@@ -259,6 +270,18 @@ $formatDate = static function (?string $date): string {
                                         <i class="bi bi-download"></i>
                                     </a>
 
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-card-action btn-card-share js-share-btn"
+                                        title="Partager"
+                                        aria-label="Partager <?= View::e($originalName) ?>"
+                                        data-file-id="<?= $fileId ?>"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#shareModal"
+                                    >
+                                        <i class="bi bi-share"></i>
+                                    </button>
+
                                     <form
                                         method="post"
                                         action="?action=delete"
@@ -343,6 +366,100 @@ $formatDate = static function (?string $date): string {
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php
+$formatDate = static function (?string $date): string {
+    if (empty($date)) return '';
+    $ts = strtotime($date);
+    return $ts !== false ? date('d/m/Y à H:i', $ts) : $date;
+};
+
+foreach ($fileList as $file):
+    $fid  = (int) ($file['id'] ?? 0);
+    $fname = (string) ($file['original_name'] ?? '');
+    $fileShares = $sharesByFileId[$fid] ?? [];
+?>
+<div class="d-none" id="share-content-<?= $fid ?>">
+    <p class="share-modal-file-name fw-semibold mb-3"><?= View::e($fname) ?></p>
+
+    <?php if (!empty($fileShares)): ?>
+        <p class="small app-muted mb-2">Liens actifs :</p>
+        <?php foreach ($fileShares as $s): ?>
+            <?php $shareUrl = $appUrl . '?action=share&token=' . urlencode((string) $s['token']); ?>
+            <div class="share-link-row mb-2">
+                <div class="input-group input-group-sm">
+                    <input
+                        type="text"
+                        class="form-control app-input font-monospace"
+                        value="<?= View::e($shareUrl) ?>"
+                        readonly
+                        aria-label="Lien de partage"
+                    >
+                    <button
+                        class="btn btn-outline-secondary js-copy-btn"
+                        type="button"
+                        data-copy="<?= View::e($shareUrl) ?>"
+                        title="Copier"
+                    >
+                        <i class="bi bi-copy"></i>
+                    </button>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-1">
+                    <span class="small app-muted">Expire le <?= View::e($formatDate((string) $s['expires_at'])) ?></span>
+                    <form method="post" action="?action=share_revoke" class="d-inline">
+                        <input type="hidden" name="_csrf" value="<?= View::e($csrf ?? '') ?>">
+                        <input type="hidden" name="token" value="<?= View::e((string) $s['token']) ?>">
+                        <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2">
+                            <i class="bi bi-x-lg me-1"></i>Révoquer
+                        </button>
+                    </form>
+                </div>
+            </div>
+        <?php endforeach; ?>
+        <hr class="my-3">
+    <?php else: ?>
+        <p class="small app-muted mb-3">Aucun lien actif pour ce fichier.</p>
+    <?php endif; ?>
+
+    <p class="small fw-semibold mb-2">Créer un nouveau lien :</p>
+    <form method="post" action="?action=share_create">
+        <input type="hidden" name="_csrf" value="<?= View::e($csrf ?? '') ?>">
+        <input type="hidden" name="file_id" value="<?= $fid ?>">
+        <div class="d-flex gap-2">
+            <select name="ttl_hours" class="form-select form-select-sm app-input">
+                <option value="1">1 heure</option>
+                <option value="24" selected>24 heures</option>
+                <option value="168">7 jours</option>
+                <option value="720">30 jours</option>
+            </select>
+            <button type="submit" class="btn btn-orange btn-sm text-nowrap">
+                <i class="bi bi-link-45deg me-1"></i>Créer
+            </button>
+        </div>
+    </form>
+</div>
+<?php endforeach; ?>
+
+<div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content preview-modal-content">
+            <div class="modal-header preview-modal-header">
+                <h5 class="modal-title preview-modal-title" id="shareModalLabel">
+                    <i class="bi bi-share me-2"></i>Partager un fichier
+                </h5>
+                <button type="button" class="btn-close preview-modal-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body" id="share-modal-body">
+                <p class="app-muted">Chargement…</p>
+            </div>
+            <div class="modal-footer preview-modal-footer">
+                <button type="button" class="btn btn-outline-orange btn-modal-action" data-bs-dismiss="modal">
+                    Fermer
+                </button>
             </div>
         </div>
     </div>
