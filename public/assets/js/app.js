@@ -1,4 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-bs-toggle="popover"]').forEach((el) => {
+        new bootstrap.Popover(el);
+    });
+
     const dropzone = document.getElementById('dropzone');
     const input = document.getElementById('file-input');
     const pickBtn = document.getElementById('pick-file-btn');

@@ -27,6 +27,11 @@ final class FileStorageService
         }
     }
 
+    public function getAllowedExtensions(): array
+    {
+        return $this->allowedExtensions;
+    }
+
     public function store(array $uploadedFile): array
     {
         if (($uploadedFile['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {

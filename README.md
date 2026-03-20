@@ -98,7 +98,7 @@ Les types de fichiers acceptés sont définis dans `FileStorageService` :
 pdf, txt, md, zip, rar, 7z
 jpg, jpeg, png, gif, webp
 doc, docx, xls, xlsx, ppt, pptx
-csv, mp3, mp4
+csv, mp3, mp4, psd
 ```
 
 ---

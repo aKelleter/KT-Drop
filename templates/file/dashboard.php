@@ -8,9 +8,16 @@ $currentPage       = max(1, (int) ($page ?? 1));
 $totalPageCount    = max(1, (int) ($totalPages ?? 1));
 $startItemCount    = (int) ($startItem ?? 0);
 $endItemCount      = (int) ($endItem ?? 0);
-$maxUploadSizeText = (string) ($maxUploadSize ?? '');
-$sharesByFileId    = is_array($sharesByFileId ?? null) ? $sharesByFileId : [];
-$appUrl            = rtrim((string) ($appUrl ?? ''), '/') . '/';
+$maxUploadSizeText  = (string) ($maxUploadSize ?? '');
+$sharesByFileId     = is_array($sharesByFileId ?? null) ? $sharesByFileId : [];
+$appUrl             = rtrim((string) ($appUrl ?? ''), '/') . '/';
+
+$allowedExts = array_map('strtoupper', is_array($allowedExtensions ?? null) ? $allowedExtensions : []);
+$popoverHtml = implode(' ', array_map(
+    static fn(string $ext): string => '<span class="ext-pill">' . htmlspecialchars($ext, ENT_QUOTES, 'UTF-8') . '</span>',
+    $allowedExts
+));
+$popoverContent = htmlspecialchars($popoverHtml, ENT_QUOTES, 'UTF-8');
 
 $startPage = max(1, $currentPage - 2);
 $endPage   = min($totalPageCount, $currentPage + 2);
@@ -52,6 +59,19 @@ $formatDate = static function (?string $date): string {
                         <p class="small app-muted mb-3">
                             Taille maximale autorisée :
                             <strong><?= View::e($maxUploadSizeText) ?></strong>
+                            <button
+                                type="button"
+                                class="btn p-0 border-0 align-baseline ms-1"
+                                data-bs-toggle="popover"
+                                data-bs-trigger="hover focus"
+                                data-bs-placement="bottom"
+                                data-bs-html="true"
+                                data-bs-title="Extensions autorisées"
+                                data-bs-content="<?= $popoverContent ?>"
+                                aria-label="Voir les extensions autorisées"
+                            >
+                                <i class="bi bi-info-circle app-muted"></i>
+                            </button>
                         </p>
 
                         <input type="file" name="file" id="file-input" class="d-none" required>

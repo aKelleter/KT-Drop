@@ -35,6 +35,7 @@ final class FileController
         $startItem = $totalFiles > 0 ? $offset + 1 : 0;
         $endItem = min($offset + count($files), $totalFiles);
 
+        $storage = new FileStorageService();
         $phpMax = View::phpUploadMaxBytes();
         $appMax = (int) Config::get('MAX_UPLOAD_SIZE', 104857600);
         $effectiveMax = min($phpMax, $appMax);
@@ -59,6 +60,7 @@ final class FileController
             'startItem' => $startItem,
             'endItem' => $endItem,
             'maxUploadSize' => View::formatBytes($effectiveMax),
+            'allowedExtensions' => $storage->getAllowedExtensions(),
             'sharesByFileId' => $sharesByFileId,
             'appUrl' => rtrim((string) Config::get('APP_URL', ''), '/') . '/',
         ]);

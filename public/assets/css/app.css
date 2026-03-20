@@ -484,6 +484,19 @@ body.app-body {
     color: var(--app-orange, #ff8c1a);
 }
 
+.ext-pill {
+    display: inline-block;
+    padding: 0.15em 0.55em;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba(255, 140, 26, 0.08);
+    color: #e07200;
+    border: 1px solid rgba(255, 140, 26, 0.3);
+    margin: 2px 1px;
+    letter-spacing: 0.02em;
+}
+
 .file-card-actions .btn-card-action:focus-visible {
     outline: 0;
     box-shadow:
