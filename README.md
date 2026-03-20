@@ -95,7 +95,7 @@ MAX_UPLOAD_SIZE=104857600
 Les types de fichiers acceptés sont définis dans `FileStorageService` :
 
 ```
-pdf, txt, zip, rar, 7z
+pdf, txt, md, zip, rar, 7z
 jpg, jpeg, png, gif, webp
 doc, docx, xls, xlsx, ppt, pptx
 csv, mp3, mp4
