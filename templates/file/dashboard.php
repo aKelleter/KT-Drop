@@ -159,7 +159,7 @@ $formatDate = static function (?string $date): string {
                                 <li>
                                     <a class="dropdown-item" href="?action=files-list">
                                         <i class="bi bi-file-earmark-text me-2"></i>
-                                        Liste complète
+                                        Liste tous les fichiers
                                     </a>
                                 </li>
 
@@ -531,7 +531,7 @@ foreach ($fileList as $file):
         <div class="modal-content preview-modal-content">
             <div class="modal-header preview-modal-header">
                 <h5 class="modal-title preview-modal-title" id="simpleFilesListModalLabel">
-                    Liste simple des fichiers
+                    Liste rapide des fichiers de la page actuelle
                 </h5>
 
                 <button

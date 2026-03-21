@@ -20,7 +20,7 @@ $endItemCount   = (int) ($endItem ?? 0);
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                     <div>
-                        <h1 class="h4 mb-1 app-section-title">Liste simple des fichiers</h1>
+                        <h1 class="h4 mb-1 app-section-title">Liste de tous les fichiers</h1>
                         <div class="small app-muted">
                             Vue légère avec téléchargement direct
                         </div>
