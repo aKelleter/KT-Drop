@@ -53,6 +53,17 @@ CREATE TABLE IF NOT EXISTS shares (
 );
 ");
 
+$pdo->exec("
+CREATE TABLE IF NOT EXISTS settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+");
+
+$defaultExtensions = 'pdf,txt,md,zip,rar,7z,jpg,jpeg,png,gif,webp,doc,docx,xls,xlsx,ppt,pptx,csv,mp3,mp4,psd';
+$stmt = $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('allowed_extensions', :value)");
+$stmt->execute(['value' => $defaultExtensions]);
+
 $count = (int) $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 
 if ($count === 0) {

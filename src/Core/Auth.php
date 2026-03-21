@@ -46,6 +46,11 @@ final class Auth
         return $_SESSION['user']['id'] ?? null;
     }
 
+    public static function isAdmin(): bool
+    {
+        return (($_SESSION['user']['role'] ?? '') === 'admin');
+    }
+
     public static function logout(): void
     {
         $_SESSION = [];

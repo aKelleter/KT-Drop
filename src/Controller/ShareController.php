@@ -70,7 +70,7 @@ final class ShareController
         Flash::set('success', 'Lien révoqué.');
 
         $back = trim($_POST['_back'] ?? '');
-        Response::redirect(in_array($back, ['shares'], true) ? '?action=' . $back : '?action=dashboard');
+        Response::redirect(in_array($back, ['shares', 'admin_shares'], true) ? '?action=' . $back : '?action=dashboard');
     }
 
     public function list(): void

@@ -46,6 +46,14 @@ $appUpd = Config::get('APP_UPD', '0.0.0');
                 <span class="small app-user-email">
                     <?= View::e(Auth::user()['email'] ?? '') ?>
                 </span>
+                <a href="?action=dashboard" class="btn btn-outline-orange btn-sm">
+                    <i class="bi bi-house me-1"></i>Fichiers
+                </a>
+                <?php if (Auth::isAdmin()): ?>
+                    <a href="?action=admin" class="btn btn-outline-orange btn-sm">
+                        <i class="bi bi-shield-lock me-1"></i>Administration
+                    </a>
+                <?php endif; ?>
                 <a href="?action=logout" class="btn btn-outline-orange btn-sm">
                     Déconnexion
                 </a>

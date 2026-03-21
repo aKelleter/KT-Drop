@@ -4,18 +4,20 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Config\Config;
+use App\Repository\SettingsRepository;
 use RuntimeException;
 
 final class FileStorageService
 {
-    private string $storagePath;
-
-    private array $allowedExtensions = [
+    private const DEFAULT_EXTENSIONS = [
         'pdf', 'txt', 'md', 'zip', 'rar', '7z',
         'jpg', 'jpeg', 'png', 'gif', 'webp',
         'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
-        'csv', 'mp3', 'mp4', 'psd'
+        'csv', 'mp3', 'mp4', 'psd',
     ];
+
+    private string $storagePath;
+    private array  $allowedExtensions;
 
     public function __construct()
     {
@@ -24,6 +26,27 @@ final class FileStorageService
 
         if (!is_dir($this->storagePath)) {
             mkdir($this->storagePath, 0775, true);
+        }
+
+        $this->allowedExtensions = $this->loadAllowedExtensions();
+    }
+
+    private function loadAllowedExtensions(): array
+    {
+        try {
+            $raw = (new SettingsRepository())->get('allowed_extensions');
+
+            if ($raw === '') {
+                return self::DEFAULT_EXTENSIONS;
+            }
+
+            $exts = array_values(array_filter(
+                array_map('trim', explode(',', strtolower($raw)))
+            ));
+
+            return $exts !== [] ? $exts : self::DEFAULT_EXTENSIONS;
+        } catch (\Throwable) {
+            return self::DEFAULT_EXTENSIONS;
         }
     }
 
