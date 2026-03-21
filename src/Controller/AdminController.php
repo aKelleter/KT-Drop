@@ -142,9 +142,10 @@ final class AdminController
             Response::redirect('?action=admin_users');
         }
 
-        $email    = trim($_POST['email'] ?? '');
-        $password = $_POST['password'] ?? '';
-        $role     = $_POST['role'] ?? 'editor';
+        $email           = trim($_POST['email'] ?? '');
+        $password        = $_POST['password'] ?? '';
+        $passwordConfirm = $_POST['password_confirm'] ?? '';
+        $role            = $_POST['role'] ?? 'editor';
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             Flash::set('danger', 'Adresse email invalide.');
@@ -153,6 +154,11 @@ final class AdminController
 
         if (strlen($password) < 8) {
             Flash::set('danger', 'Le mot de passe doit contenir au moins 8 caractères.');
+            Response::redirect('?action=admin_users');
+        }
+
+        if ($password !== $passwordConfirm) {
+            Flash::set('danger', 'Les mots de passe ne correspondent pas.');
             Response::redirect('?action=admin_users');
         }
 
@@ -187,10 +193,11 @@ final class AdminController
             Response::redirect('?action=admin_users');
         }
 
-        $id       = (int) ($_POST['id'] ?? 0);
-        $email    = trim($_POST['email'] ?? '');
-        $password = $_POST['password'] ?? '';
-        $role     = $_POST['role'] ?? 'editor';
+        $id              = (int) ($_POST['id'] ?? 0);
+        $email           = trim($_POST['email'] ?? '');
+        $password        = $_POST['password'] ?? '';
+        $passwordConfirm = $_POST['password_confirm'] ?? '';
+        $role            = $_POST['role'] ?? 'editor';
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             Flash::set('danger', 'Adresse email invalide.');
@@ -224,6 +231,11 @@ final class AdminController
         if ($password !== '') {
             if (strlen($password) < 8) {
                 Flash::set('danger', 'Le mot de passe doit contenir au moins 8 caractères.');
+                Response::redirect('?action=admin_users');
+            }
+
+            if ($password !== $passwordConfirm) {
+                Flash::set('danger', 'Les mots de passe ne correspondent pas.');
                 Response::redirect('?action=admin_users');
             }
 

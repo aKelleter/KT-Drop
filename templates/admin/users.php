@@ -161,6 +161,21 @@ $roleLabel = static function (string $role): string {
                             autocomplete="new-password"
                         >
                     </div>
+                    <div class="mb-3">
+                        <label for="create-password-confirm" class="form-label small fw-semibold">
+                            Confirmer le mot de passe
+                        </label>
+                        <input
+                            type="password"
+                            class="form-control"
+                            id="create-password-confirm"
+                            name="password_confirm"
+                            required
+                            minlength="8"
+                            autocomplete="new-password"
+                        >
+                        <div class="invalid-feedback">Les mots de passe ne correspondent pas.</div>
+                    </div>
                     <div class="mb-1">
                         <label for="create-role" class="form-label small fw-semibold">Rôle</label>
                         <select class="form-select" id="create-role" name="role">
@@ -219,6 +234,20 @@ $roleLabel = static function (string $role): string {
                             autocomplete="new-password"
                         >
                     </div>
+                    <div class="mb-3">
+                        <label for="edit-password-confirm" class="form-label small fw-semibold">
+                            Confirmer le nouveau mot de passe
+                        </label>
+                        <input
+                            type="password"
+                            class="form-control"
+                            id="edit-password-confirm"
+                            name="password_confirm"
+                            minlength="8"
+                            autocomplete="new-password"
+                        >
+                        <div class="invalid-feedback">Les mots de passe ne correspondent pas.</div>
+                    </div>
                     <div class="mb-1">
                         <label for="edit-role" class="form-label small fw-semibold">Rôle</label>
                         <select class="form-select" id="edit-role" name="role">
@@ -272,6 +301,33 @@ $roleLabel = static function (string $role): string {
 
 <script>
 (function () {
+    function checkPasswordsMatch(pwdId, confirmId) {
+        const pwd     = document.getElementById(pwdId);
+        const confirm = document.getElementById(confirmId);
+        if (!pwd || !confirm) return true;
+        const match = pwd.value === '' || pwd.value === confirm.value;
+        confirm.classList.toggle('is-invalid', !match);
+        return match;
+    }
+
+    /* --- Modal Créer --- */
+    const createForm = document.querySelector('#createUserModal form');
+    if (createForm) {
+        const pwd     = document.getElementById('create-password');
+        const confirm = document.getElementById('create-password-confirm');
+
+        [pwd, confirm].forEach(el => el?.addEventListener('input', () => {
+            checkPasswordsMatch('create-password', 'create-password-confirm');
+        }));
+
+        createForm.addEventListener('submit', function (e) {
+            if (!checkPasswordsMatch('create-password', 'create-password-confirm')) {
+                e.preventDefault();
+            }
+        });
+    }
+
+    /* --- Modal Modifier --- */
     const editModal = document.getElementById('editUserModal');
     if (editModal) {
         editModal.addEventListener('show.bs.modal', function (e) {
@@ -279,19 +335,36 @@ $roleLabel = static function (string $role): string {
             document.getElementById('edit-id').value    = btn.dataset.id;
             document.getElementById('edit-email').value = btn.dataset.email;
             document.getElementById('edit-password').value = '';
+            const confirm = document.getElementById('edit-password-confirm');
+            if (confirm) { confirm.value = ''; confirm.classList.remove('is-invalid'); }
 
             const roleSelect = document.getElementById('edit-role');
             for (const opt of roleSelect.options) {
                 opt.selected = opt.value === btn.dataset.role;
             }
         });
+
+        const editForm = editModal.querySelector('form');
+        const pwd      = document.getElementById('edit-password');
+        const confirm  = document.getElementById('edit-password-confirm');
+
+        [pwd, confirm].forEach(el => el?.addEventListener('input', () => {
+            checkPasswordsMatch('edit-password', 'edit-password-confirm');
+        }));
+
+        editForm?.addEventListener('submit', function (e) {
+            if (!checkPasswordsMatch('edit-password', 'edit-password-confirm')) {
+                e.preventDefault();
+            }
+        });
     }
 
+    /* --- Modal Supprimer --- */
     const deleteModal = document.getElementById('deleteUserModal');
     if (deleteModal) {
         deleteModal.addEventListener('show.bs.modal', function (e) {
             const btn = e.relatedTarget;
-            document.getElementById('delete-id').value    = btn.dataset.id;
+            document.getElementById('delete-id').value       = btn.dataset.id;
             document.getElementById('delete-email').textContent = btn.dataset.email;
         });
     }
