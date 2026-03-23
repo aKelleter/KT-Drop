@@ -20,6 +20,7 @@ Application web de dépôt de fichiers auto-hébergée, développée en PHP nati
 
 ### Gestion des fichiers
 - Upload par glisser-déposer ou sélection (drag & drop avec retour AJAX)
+- **Upload découpé en chunks** pour les fichiers volumineux (> 5 Mo) — voir section dédiée
 - Téléchargement sécurisé des fichiers enregistrés
 - Prévisualisation intégrée : images, PDF, fichiers texte (TXT, CSV, JSON…)
 - Suppression avec protection CSRF (supprime aussi les partages associés)
@@ -196,6 +197,55 @@ Mot de passe : admin1234
 
 ---
 
+## Upload de gros fichiers (chunked upload)
+
+Pour les fichiers **supérieurs à 5 Mo**, l'upload est automatiquement découpé en morceaux (*chunks*) de 2 Mo envoyés séquentiellement. Cette approche permet de contourner les limites de temps d'exécution PHP et d'afficher une progression précise même sur des fichiers volumineux.
+
+### Protocole en 3 phases
+
+```
+1. Initialisation  POST ?action=upload_chunk_init
+   → le serveur crée une session temporaire et retourne un uploadId unique
+
+2. Envoi des chunks  POST ?action=upload_chunk  (×N)
+   → chaque chunk de 2 Mo est envoyé séparément
+   → la barre de progression reflète les octets réellement transmis
+
+3. Finalisation  POST ?action=upload_chunk_finalize
+   → le serveur assemble les chunks, applique toutes les validations
+     (extension, MIME, taille, SHA-256), déplace le fichier dans storage/files/
+     et insère l'entrée en base de données
+```
+
+### Stockage temporaire
+
+Les chunks sont conservés dans `storage/tmp/chunks/{uploadId}/` pendant la durée de l'upload. Ce répertoire est automatiquement nettoyé :
+
+- **à la finalisation** : suppression immédiate après assemblage réussi ou en cas d'erreur (bloc `finally`)
+- **sessions expirées** : toute session de plus d'**1 heure** est purgée au prochain upload entrant (`pruneExpired()`)
+
+### Sécurité
+
+| Mécanisme | Détail |
+|---|---|
+| CSRF | Token vérifié sur chacune des 3 requêtes |
+| Upload ID | Hex 32 chars (`bin2hex(random_bytes(16))`), validé par regex avant tout accès disque |
+| `is_uploaded_file()` | Vérifié sur chaque chunk — impossible de rejouer un fichier arbitraire |
+| Extension & MIME | Vérifiés deux fois : à l'init (fail-fast) et sur le fichier assemblé final |
+| Taille | Vérifiée à l'init (taille déclarée) et sur le fichier assemblé réel |
+| Path traversal | L'uploadId est strictement filtré (`/^[a-f0-9]{32}$/`) avant construction du chemin |
+
+### Seuils configurables (dans `app.js`)
+
+```js
+const CHUNK_THRESHOLD = 5 * 1024 * 1024;  // Seuil de bascule : 5 Mo
+const CHUNK_SIZE      = 2 * 1024 * 1024;  // Taille d'un chunk : 2 Mo
+```
+
+Les fichiers en dessous du seuil utilisent l'upload classique en une seule requête (comportement inchangé).
+
+---
+
 ## Structure du projet
 
 ```text
@@ -234,6 +284,7 @@ KT-Drop/
 │   │   ├── StatsRepository.php        # Requêtes statistiques
 │   │   └── UserRepository.php         # CRUD utilisateurs, comptage rôles
 │   └── Service/
+│       ├── ChunkUploadService.php     # Gestion des uploads en chunks (init, stockage, assemblage, purge)
 │       └── FileStorageService.php     # Validation, stockage, extensions (depuis DB)
 ├── storage/
 │   ├── files/                         # Fichiers uploadés (ignoré par git)

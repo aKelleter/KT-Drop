@@ -9,6 +9,7 @@ use App\Core\Flash;
 use App\Core\Response;
 use App\Repository\FileRepository;
 use App\Repository\ShareRepository;
+use App\Service\ChunkUploadService;
 use App\Service\FileStorageService;
 use App\Config\Config;
 use App\Core\View;
@@ -142,6 +143,145 @@ final class FileController
         }
 
         Response::redirect('?action=dashboard');
+    }
+
+    public function uploadChunkInit(): void
+    {
+        header('Content-Type: application/json; charset=UTF-8');
+
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Jeton CSRF invalide.']);
+            return;
+        }
+
+        $originalName = trim($_POST['original_name'] ?? '');
+        $totalSize    = (int) ($_POST['total_size'] ?? 0);
+        $totalChunks  = (int) ($_POST['total_chunks'] ?? 0);
+
+        if ($originalName === '' || $totalSize <= 0 || $totalChunks < 1) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Paramètres invalides.']);
+            return;
+        }
+
+        try {
+            $storage   = new FileStorageService();
+            $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+            if (!in_array($extension, $storage->getAllowedExtensions(), true)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Extension non autorisée.']);
+                return;
+            }
+
+            $maxSize = (int) Config::get('MAX_UPLOAD_SIZE', 104857600);
+
+            if ($totalSize > $maxSize) {
+                $mb = round($maxSize / 1024 / 1024, 1);
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => "Fichier trop volumineux. Maximum autorisé : {$mb} Mo."]);
+                return;
+            }
+
+            $chunkService = new ChunkUploadService();
+            $uploadId     = $chunkService->initSession($originalName, $totalSize, $totalChunks);
+
+            echo json_encode(['success' => true, 'upload_id' => $uploadId]);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function uploadChunk(): void
+    {
+        header('Content-Type: application/json; charset=UTF-8');
+
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Jeton CSRF invalide.']);
+            return;
+        }
+
+        $uploadId   = $_POST['upload_id'] ?? '';
+        $chunkIndex = (int) ($_POST['chunk_index'] ?? -1);
+
+        if (!preg_match('/^[a-f0-9]{32}$/', $uploadId) || $chunkIndex < 0) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Paramètres invalides.']);
+            return;
+        }
+
+        if (!isset($_FILES['chunk']) || $_FILES['chunk']['error'] !== UPLOAD_ERR_OK) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Chunk manquant ou invalide.']);
+            return;
+        }
+
+        try {
+            $chunkService = new ChunkUploadService();
+            $chunkService->pruneExpired();
+            $received = $chunkService->storeChunk($uploadId, $chunkIndex, $_FILES['chunk']['tmp_name']);
+
+            echo json_encode(['success' => true, 'received' => $received]);
+        } catch (\Throwable $e) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function uploadChunkFinalize(): void
+    {
+        header('Content-Type: application/json; charset=UTF-8');
+
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Jeton CSRF invalide.']);
+            return;
+        }
+
+        $uploadId = $_POST['upload_id'] ?? '';
+
+        if (!preg_match('/^[a-f0-9]{32}$/', $uploadId)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Upload ID invalide.']);
+            return;
+        }
+
+        $chunkService = new ChunkUploadService();
+
+        try {
+            $meta          = $chunkService->getMeta($uploadId);
+            $assembledPath = $chunkService->assemble($uploadId);
+
+            $storage = new FileStorageService();
+            $file    = $storage->storeAssembled(
+                $assembledPath,
+                (string) $meta['original_name'],
+                (int)    $meta['total_size']
+            );
+
+            $repo = new FileRepository();
+            $repo->create([
+                'original_name' => $file['original_name'],
+                'stored_name'   => $file['stored_name'],
+                'mime_type'     => $file['mime_type'],
+                'extension'     => $file['extension'],
+                'size_bytes'    => $file['size_bytes'],
+                'sha256'        => $file['sha256'],
+                'storage_path'  => $file['storage_path'],
+                'uploaded_by'   => Auth::id(),
+                'created_at'    => date('Y-m-d H:i:s'),
+            ]);
+
+            echo json_encode(['success' => true, 'message' => 'Fichier uploadé avec succès.']);
+        } catch (\Throwable $e) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        } finally {
+            $chunkService->cleanup($uploadId);
+        }
     }
 
     public function download(): void

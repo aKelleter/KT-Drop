@@ -55,6 +55,53 @@ final class FileStorageService
         return $this->allowedExtensions;
     }
 
+    /**
+     * Valide et stocke un fichier déjà assemblé depuis un chemin temporaire.
+     * Applique les mêmes contrôles de sécurité que store() : taille, extension, MIME, SHA-256.
+     */
+    public function storeAssembled(string $assembledPath, string $originalName, int $declaredSize): array
+    {
+        $actualSize = filesize($assembledPath);
+
+        if ($actualSize === false || $actualSize <= 0) {
+            throw new RuntimeException('Le fichier assemblé est vide ou illisible.');
+        }
+
+        $maxSize = (int) Config::get('MAX_UPLOAD_SIZE', 104857600);
+
+        if ($actualSize > $maxSize) {
+            throw new RuntimeException('Le fichier dépasse la taille maximale autorisée.');
+        }
+
+        $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+        if (!in_array($extension, $this->allowedExtensions, true)) {
+            throw new RuntimeException('Extension non autorisée.');
+        }
+
+        $finfo    = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $assembledPath) ?: 'application/octet-stream';
+        finfo_close($finfo);
+
+        $sha256     = hash_file('sha256', $assembledPath);
+        $storedName = date('Ymd_His') . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
+        $destination = $this->storagePath . '/' . $storedName;
+
+        if (!rename($assembledPath, $destination)) {
+            throw new RuntimeException('Impossible de déplacer le fichier assemblé.');
+        }
+
+        return [
+            'original_name' => $originalName,
+            'stored_name'   => $storedName,
+            'mime_type'     => $mimeType,
+            'extension'     => $extension,
+            'size_bytes'    => $actualSize,
+            'sha256'        => $sha256,
+            'storage_path'  => $destination,
+        ];
+    }
+
     public function store(array $uploadedFile): array
     {
         if (($uploadedFile['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {

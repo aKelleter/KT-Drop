@@ -56,7 +56,98 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (uploadForm && input && progressWrapper && progressBar && statusText) {
-        uploadForm.addEventListener('submit', (e) => {
+        const CHUNK_THRESHOLD = 5 * 1024 * 1024;  // 5 Mo
+        const CHUNK_SIZE      = 2 * 1024 * 1024;  // 2 Mo par chunk
+
+        async function uploadChunked(file, csrfToken) {
+            const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+            // 1. Init de la session
+            const initData = new FormData();
+            initData.append('_csrf', csrfToken);
+            initData.append('original_name', file.name);
+            initData.append('total_size', file.size);
+            initData.append('total_chunks', totalChunks);
+
+            const initResp = await fetch('?action=upload_chunk_init', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: initData,
+            });
+
+            const initJson = await initResp.json();
+            if (!initJson.success) {
+                throw new Error(initJson.message || "Erreur d\u0027initialisation.");
+            }
+
+            const uploadId = initJson.upload_id;
+
+            // 2. Envoi des chunks
+            for (let i = 0; i < totalChunks; i++) {
+                const start = i * CHUNK_SIZE;
+                const end   = Math.min(start + CHUNK_SIZE, file.size);
+                const blob  = file.slice(start, end);
+
+                const chunkData = new FormData();
+                chunkData.append('_csrf', csrfToken);
+                chunkData.append('upload_id', uploadId);
+                chunkData.append('chunk_index', i);
+                chunkData.append('chunk', blob, file.name);
+
+                const bytesSentBefore = i * CHUNK_SIZE;
+
+                await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', '?action=upload_chunk', true);
+                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+                    xhr.upload.addEventListener('progress', (event) => {
+                        if (event.lengthComputable) {
+                            const totalSent = bytesSentBefore + event.loaded;
+                            const percent   = Math.min(99, Math.round((totalSent / file.size) * 100));
+                            progressBar.style.width = percent + '%';
+                            progressBar.textContent = percent + '%';
+                        }
+                    });
+
+                    xhr.addEventListener('load', () => {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            try {
+                                const json = JSON.parse(xhr.responseText);
+                                json.success ? resolve(json) : reject(new Error(json.message || 'Erreur chunk.'));
+                            } catch (ex) {
+                                reject(new Error('Réponse invalide du serveur.'));
+                            }
+                        } else {
+                            let msg = "Erreur lors de l\u0027envoi du chunk.";
+                            try { msg = JSON.parse(xhr.responseText).message || msg; } catch (ex) {}
+                            reject(new Error(msg));
+                        }
+                    });
+
+                    xhr.addEventListener('error', () => reject(new Error('Erreur réseau.')));
+                    xhr.send(chunkData);
+                });
+            }
+
+            // 3. Finalisation
+            const finalData = new FormData();
+            finalData.append('_csrf', csrfToken);
+            finalData.append('upload_id', uploadId);
+
+            const finalResp = await fetch('?action=upload_chunk_finalize', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: finalData,
+            });
+
+            const finalJson = await finalResp.json();
+            if (!finalJson.success) {
+                throw new Error(finalJson.message || 'Erreur de finalisation.');
+            }
+        }
+
+        uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             if (!input.files || input.files.length === 0) {
@@ -64,58 +155,69 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const formData = new FormData(uploadForm);
-            const xhr = new XMLHttpRequest();
+            const file      = input.files[0];
+            const csrfToken = uploadForm.querySelector('input[name="_csrf"]').value;
 
             progressWrapper.classList.remove('d-none');
             uploadForm.classList.add('upload-is-busy');
-
-            if (submitBtn) {
-                submitBtn.disabled = true;
-            }
+            if (submitBtn) { submitBtn.disabled = true; }
 
             progressBar.style.width = '0%';
             progressBar.textContent = '0%';
-            statusText.textContent = 'Upload en cours...';
+            statusText.textContent  = 'Upload en cours...';
 
-            xhr.open('POST', uploadForm.action, true);
-            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-
-            xhr.upload.addEventListener('progress', (event) => {
-                if (event.lengthComputable) {
-                    const percent = Math.round((event.loaded / event.total) * 100);
-                    progressBar.style.width = `${percent}%`;
-                    progressBar.textContent = `${percent}%`;
-                }
-            });
-
-            xhr.addEventListener('load', () => {
-                if (xhr.status >= 200 && xhr.status < 300) {
+            if (file.size > CHUNK_THRESHOLD) {
+                // Upload découpe en chunks
+                try {
+                    await uploadChunked(file, csrfToken);
                     progressBar.style.width = '100%';
                     progressBar.textContent = '100%';
-                    statusText.textContent = 'Upload terminé.';
-
-                    setTimeout(() => {
-                        window.location.href = '?action=dashboard';
-                    }, 500);
-                } else {
-                    statusText.textContent = 'Erreur pendant l’upload.';
+                    statusText.textContent  = 'Upload terminé.';
+                    setTimeout(() => { window.location.href = '?action=dashboard'; }, 500);
+                } catch (err) {
+                    statusText.textContent = err.message || "Erreur pendant l\u0027upload.";
                     uploadForm.classList.remove('upload-is-busy');
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
+                    if (submitBtn) { submitBtn.disabled = false; }
+                }
+            } else {
+                // Upload standard (fichiers <= 5 Mo)
+                const formData = new FormData(uploadForm);
+                const xhr      = new XMLHttpRequest();
+
+                xhr.open('POST', uploadForm.action, true);
+                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+                xhr.upload.addEventListener('progress', (event) => {
+                    if (event.lengthComputable) {
+                        const percent = Math.round((event.loaded / event.total) * 100);
+                        progressBar.style.width = percent + '%';
+                        progressBar.textContent = percent + '%';
                     }
-                }
-            });
+                });
 
-            xhr.addEventListener('error', () => {
-                statusText.textContent = 'Erreur réseau pendant l’upload.';
-                uploadForm.classList.remove('upload-is-busy');
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                }
-            });
+                xhr.addEventListener('load', () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        progressBar.style.width = '100%';
+                        progressBar.textContent = '100%';
+                        statusText.textContent  = 'Upload terminé.';
+                        setTimeout(() => { window.location.href = '?action=dashboard'; }, 500);
+                    } else {
+                        let msg = "Erreur pendant l\u0027upload.";
+                        try { msg = JSON.parse(xhr.responseText).message || msg; } catch (ex) {}
+                        statusText.textContent = msg;
+                        uploadForm.classList.remove('upload-is-busy');
+                        if (submitBtn) { submitBtn.disabled = false; }
+                    }
+                });
 
-            xhr.send(formData);
+                xhr.addEventListener('error', () => {
+                    statusText.textContent = "Erreur réseau pendant l\u0027upload.";
+                    uploadForm.classList.remove('upload-is-busy');
+                    if (submitBtn) { submitBtn.disabled = false; }
+                });
+
+                xhr.send(formData);
+            }
         });
     }
 
@@ -147,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
         previewContent.innerHTML = `
             <div class="file-preview-loading">
                 <div class="spinner-border text-warning" role="status" aria-hidden="true"></div>
-                <div class="small app-muted mt-3">Chargement de l’aperçu...</div>
+                <div class="small app-muted mt-3">Chargement de l\u0027aper\u00e7u...</div>
             </div>
         `;
     };
@@ -182,13 +284,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (!response.ok) {
-                    throw new Error('Impossible de charger l’aperçu.');
+                    throw new Error("Impossible de charger l\u0027aper\u00e7u.");
                 }
 
                 const html = await response.text();
                 previewContent.innerHTML = html;
             } catch (error) {
-                setErrorState('Impossible de charger l’aperçu du fichier.');
+                setErrorState("Impossible de charger l\u0027aper\u00e7u du fichier.");
             }
         });
     });
@@ -242,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         shareModalEl.addEventListener('hidden.bs.modal', () => {
-            shareModalBody.innerHTML = '<p class="app-muted">Chargement…</p>';
+            shareModalBody.innerHTML = '<p class="app-muted">Chargement\u2026</p>';
         });
 
         shareModalBody.addEventListener('click', (e) => {
