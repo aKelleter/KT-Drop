@@ -84,14 +84,43 @@ Pointer le document root d'Apache sur le dossier `public/`.
 
 ## Configuration
 
-Toute la configuration applicative se fait dans `.env` :
+### Fonctionnement des fichiers d'environnement
+
+La configuration repose sur deux fichiers complémentaires :
+
+| Fichier | Versionné | Rôle |
+|---|---|---|
+| `.env` | Oui | Valeurs par défaut et variables mises à jour à chaque version (`APP_VERSION`, `APP_UPD`, etc.) |
+| `.env.local` | **Non** | Surcharges propres à l'environnement (prod, staging…) — créé une seule fois sur le serveur, jamais écrasé |
+
+Au démarrage, `.env` est chargé en premier, puis `.env.local` (s'il existe) **écrase** les variables qu'il redéfinit. Cela permet de mettre à jour `.env` librement sans jamais toucher aux paramètres de production.
+
+### Mise en place sur le serveur de production
+
+```bash
+# À faire une seule fois, juste après le premier déploiement
+cp .env.local.example .env.local
+# Éditer .env.local avec les valeurs réelles
+```
+
+Contenu type de `.env.local` en production :
+
+```ini
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://votre-domaine.be/
+```
+
+> `.env.local` est ignoré par git (`.gitignore`). Il ne sera jamais écrasé lors des mises à jour.
+
+### Variables disponibles dans `.env`
 
 ```ini
 # Application
 APP_NAME="KT-Drop"
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=https://votre-domaine.be/
+APP_ENV=dev
+APP_DEBUG=true
+APP_URL=http://localhost/KT-Drop/
 
 # Pagination
 FILES_PER_PAGE=10
@@ -225,7 +254,9 @@ KT-Drop/
 │   └── share/
 │       ├── access.php                 # Page publique d'accès au partage
 │       └── list.php                   # Liste des partages actifs (vue utilisateur)
-├── .env.example
+├── .env                               # Variables par défaut (versionné)
+├── .env.local                         # Surcharges locales/prod (ignoré par git)
+├── .env.local.example                 # Modèle pour créer .env.local (versionné)
 ├── composer.json
 └── .htaccess
 ```

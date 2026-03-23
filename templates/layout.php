@@ -72,6 +72,7 @@ $appUpd = Config::get('APP_UPD', '0.0.0');
         <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2">
             <span><?= View::e((string) $appName) ?></span>
             <span>Version <?= View::e((string) $appVersion) ?> - <?= View::e((string) $appUpd) ?></span>
+            <a href="https://github.com/aKelleter/KT-Drop" target="_blank" rel="noopener noreferrer" class="text-secondary" title="GitHub"><i class="bi bi-github fs-5"></i></a>
         </div>
     </footer>
 </div>

@@ -1,3 +1,5 @@
+.env.local
+
 /storage/*
 !/storage/.gitkeep
 !/storage/files/
