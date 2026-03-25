@@ -60,6 +60,24 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 ");
 
+$pdo->exec("
+CREATE TABLE IF NOT EXISTS categories (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT NOT NULL UNIQUE,
+    color      TEXT NOT NULL DEFAULT '#6c757d',
+    created_at TEXT NOT NULL
+);
+");
+
+// Ajout de category_id dans files si absent (idempotent)
+$cols = array_column(
+    $pdo->query("PRAGMA table_info(files)")->fetchAll(PDO::FETCH_ASSOC),
+    'name'
+);
+if (!in_array('category_id', $cols, true)) {
+    $pdo->exec("ALTER TABLE files ADD COLUMN category_id INTEGER REFERENCES categories(id)");
+}
+
 $defaultExtensions = 'pdf,txt,md,zip,rar,7z,jpg,jpeg,png,gif,webp,doc,docx,xls,xlsx,ppt,pptx,csv,mp3,mp4,psd';
 $stmt = $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('allowed_extensions', :value)");
 $stmt->execute(['value' => $defaultExtensions]);

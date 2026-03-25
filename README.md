@@ -83,11 +83,8 @@ composer install
 # 2. Configurer l'environnement
 cp .env.example .env
 
-# 3. Initialiser la base de données
+# 3. Initialiser la base de données (ou mettre à jour une base existante)
 php scripts/init_db.php
-
-# 4. Appliquer les migrations (à exécuter une seule fois sur une base existante)
-php scripts/migrate_categories.php
 ```
 
 Pointer le document root d'Apache sur le dossier `public/`.
@@ -274,8 +271,7 @@ KT-Drop/
 │       ├── js/app.js
 │       └── img/
 ├── scripts/
-│   ├── init_db.php                    # Schéma, données par défaut, compte admin
-│   └── migrate_categories.php         # Migration : table categories + colonne category_id
+│   └── init_db.php                    # Schéma complet, migrations idempotentes, compte admin
 ├── src/
 │   ├── Config/Config.php              # Accès aux variables d'environnement
 │   ├── Controller/
