@@ -24,10 +24,19 @@ Application web de dépôt de fichiers auto-hébergée, développée en PHP nati
 - Téléchargement sécurisé des fichiers enregistrés
 - Prévisualisation intégrée : images, PDF, fichiers texte (TXT, CSV, JSON…)
 - Suppression avec protection CSRF (supprime aussi les partages associés)
+- **Modification du nom et de la catégorie** d'un fichier directement depuis le dashboard
 - Recherche par nom de fichier, extension ou utilisateur
+- **Filtrage par catégorie** (badges cliquables + select) sur le dashboard et la vue liste
 - Pagination configurable
 - Popover des extensions autorisées dans la zone d'upload (pills visuelles)
-- Vue liste simplifiée (tous les fichiers sans pagination)
+- Vue liste simplifiée (tous les fichiers sans pagination) avec filtres catégorie
+
+### Catégories
+- Création de catégories avec nom et couleur personnalisable
+- Association d'une catégorie à un fichier à l'upload ou en modification ultérieure
+- Badge coloré affiché sur chaque carte fichier et chaque ligne de la vue liste
+- Filtrage par catégorie sur toutes les vues de liste
+- Gestion complète depuis l'administration (création, édition, suppression)
 
 ### Partage public
 - Génération d'un lien public signé par token (`random_bytes(32)`)
@@ -40,8 +49,9 @@ Application web de dépôt de fichiers auto-hébergée, développée en PHP nati
 ### Administration
 - Dashboard d'accueil avec cartes de navigation par module
 - **Gestion des utilisateurs** : création, édition, suppression, gestion des rôles
+- **Gestion des catégories** : création, édition (couleur + nom), suppression
 - **Partages actifs** : liste globale de tous les liens non expirés avec révocation
-- **Statistiques** : vue d'ensemble des fichiers, tailles, extensions, activité
+- **Statistiques** : vue d'ensemble des fichiers, tailles, extensions, activité et répartition par catégorie
 - **Paramètres** : configuration des extensions autorisées via interface web (stockées en base)
 - Toutes les actions admin protégées CSRF et réservées au rôle `admin`
 
@@ -75,6 +85,9 @@ cp .env.example .env
 
 # 3. Initialiser la base de données
 php scripts/init_db.php
+
+# 4. Appliquer les migrations (à exécuter une seule fois sur une base existante)
+php scripts/migrate_categories.php
 ```
 
 Pointer le document root d'Apache sur le dossier `public/`.
@@ -261,13 +274,14 @@ KT-Drop/
 │       ├── js/app.js
 │       └── img/
 ├── scripts/
-│   └── init_db.php                    # Schéma, données par défaut, compte admin
+│   ├── init_db.php                    # Schéma, données par défaut, compte admin
+│   └── migrate_categories.php         # Migration : table categories + colonne category_id
 ├── src/
 │   ├── Config/Config.php              # Accès aux variables d'environnement
 │   ├── Controller/
-│   │   ├── AdminController.php        # Dashboard, utilisateurs, partages, stats, paramètres
+│   │   ├── AdminController.php        # Dashboard, utilisateurs, catégories, partages, stats, paramètres
 │   │   ├── AuthController.php         # Connexion / déconnexion
-│   │   ├── FileController.php         # Upload, téléchargement, suppression, prévisualisation
+│   │   ├── FileController.php         # Upload, modification, téléchargement, suppression, prévisualisation
 │   │   └── ShareController.php        # Création, révocation, accès public
 │   ├── Core/
 │   │   ├── Auth.php                   # Session, rôles (isAdmin)
@@ -278,24 +292,27 @@ KT-Drop/
 │   │   ├── Router.php
 │   │   └── View.php                   # Rendu, échappement, utilitaires fichiers
 │   ├── Repository/
-│   │   ├── FileRepository.php
+│   │   ├── CategoryRepository.php     # CRUD catégories
+│   │   ├── FileRepository.php         # Fichiers avec filtre catégorie et mise à jour
 │   │   ├── SettingsRepository.php     # Clé/valeur en base (extensions, etc.)
 │   │   ├── ShareRepository.php        # Partages actifs, révocation
-│   │   ├── StatsRepository.php        # Requêtes statistiques
+│   │   ├── StatsRepository.php        # Requêtes statistiques (dont stats par catégorie)
 │   │   └── UserRepository.php         # CRUD utilisateurs, comptage rôles
 │   └── Service/
 │       ├── ChunkUploadService.php     # Gestion des uploads en chunks (init, stockage, assemblage, purge)
 │       └── FileStorageService.php     # Validation, stockage, extensions (depuis DB)
 ├── storage/
 │   ├── files/                         # Fichiers uploadés (ignoré par git)
+│   ├── log/                           # Logs d'erreurs PHP en production (ignoré par git)
 │   └── tmp/
 ├── templates/
 │   ├── layout.php                     # Navbar (Fichiers / Administration / Déconnexion)
 │   ├── admin/
+│   │   ├── categories.php             # Gestion des catégories
 │   │   ├── dashboard.php              # Accueil administration (cartes modules)
 │   │   ├── settings.php               # Gestion des extensions autorisées
 │   │   ├── shares.php                 # Liste globale des partages actifs
-│   │   ├── stats.php                  # Statistiques
+│   │   ├── stats.php                  # Statistiques (dont répartition par catégorie)
 │   │   └── users.php                  # Gestion des utilisateurs
 │   ├── auth/
 │   │   └── login.php
@@ -319,9 +336,23 @@ KT-Drop/
 | Table | Rôle |
 |---|---|
 | `users` | Comptes utilisateurs (email, hash, rôle) |
-| `files` | Métadonnées des fichiers uploadés |
+| `files` | Métadonnées des fichiers uploadés (inclut `category_id` FK nullable) |
+| `categories` | Catégories de fichiers (nom, couleur) |
 | `shares` | Liens de partage (token, expiration, auteur) |
 | `settings` | Configuration applicative clé/valeur |
+
+---
+
+## Gestion des erreurs PHP
+
+Le comportement des erreurs PHP est piloté par la variable `APP_DEBUG` :
+
+| `APP_DEBUG` | `display_errors` | Comportement |
+|---|---|---|
+| `true` | On | Erreurs affichées dans le navigateur (développement) |
+| `false` | Off | Erreurs silencieuses pour l'utilisateur, loguées dans `storage/log/php_errors.log` |
+
+Cela évite notamment que des warnings PHP ne contaminent les réponses JSON des endpoints d'upload.
 
 ---
 
