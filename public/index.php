@@ -21,6 +21,7 @@ $router->post('upload_chunk_init', [FileController::class, 'uploadChunkInit']);
 $router->post('upload_chunk', [FileController::class, 'uploadChunk']);
 $router->post('upload_chunk_finalize', [FileController::class, 'uploadChunkFinalize']);
 $router->get('download', [FileController::class, 'download']);
+$router->post('file_update', [FileController::class, 'update']);
 $router->post('delete', [FileController::class, 'delete']);
 $router->get('preview', [FileController::class, 'preview']);
 $router->get('files-list', [FileController::class, 'simpleList']);
@@ -34,6 +35,11 @@ $router->get('admin_users', [AdminController::class, 'users']);
 $router->post('admin_user_create', [AdminController::class, 'createUser']);
 $router->post('admin_user_update', [AdminController::class, 'updateUser']);
 $router->post('admin_user_delete', [AdminController::class, 'deleteUser']);
+
+$router->get('admin_categories', [AdminController::class, 'categories']);
+$router->post('admin_category_create', [AdminController::class, 'createCategory']);
+$router->post('admin_category_update', [AdminController::class, 'updateCategory']);
+$router->post('admin_category_delete', [AdminController::class, 'deleteCategory']);
 
 $router->get('shares', [ShareController::class, 'list']);
 $router->post('share_create', [ShareController::class, 'create']);

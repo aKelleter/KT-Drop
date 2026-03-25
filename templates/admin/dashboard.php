@@ -64,6 +64,22 @@ use App\Core\View;
     </div>
 
     <div class="col-sm-6 col-lg-4">
+        <a href="?action=admin_categories" class="admin-module-card card app-card shadow-soft text-decoration-none h-100">
+            <div class="card-body d-flex align-items-start gap-3 p-4">
+                <div class="admin-module-icon">
+                    <i class="bi bi-tags"></i>
+                </div>
+                <div>
+                    <div class="fw-semibold admin-module-title">Catégories</div>
+                    <div class="small app-muted mt-1">
+                        Créer et gérer les catégories pour organiser les fichiers.
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-sm-6 col-lg-4">
         <a href="?action=admin_settings" class="admin-module-card card app-card shadow-soft text-decoration-none h-100">
             <div class="card-body d-flex align-items-start gap-3 p-4">
                 <div class="admin-module-icon">

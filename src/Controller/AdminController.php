@@ -9,6 +9,7 @@ use App\Core\Csrf;
 use App\Core\Flash;
 use App\Core\Response;
 use App\Core\View;
+use App\Repository\CategoryRepository;
 use App\Repository\SettingsRepository;
 use App\Repository\ShareRepository;
 use App\Repository\StatsRepository;
@@ -96,12 +97,13 @@ final class AdminController
         $repo = new StatsRepository();
 
         View::render('admin/stats', [
-            'user'       => Auth::user(),
-            'flash'      => Flash::get(),
-            'global'     => $repo->findGlobal(),
-            'extensions' => $repo->findTopExtensions(8),
-            'activity'   => $repo->findUploadsPerDay(30),
-            'uploaders'  => $repo->findTopUploaders(5),
+            'user'              => Auth::user(),
+            'flash'             => Flash::get(),
+            'global'            => $repo->findGlobal(),
+            'extensions'        => $repo->findTopExtensions(8),
+            'activity'          => $repo->findUploadsPerDay(30),
+            'uploaders'         => $repo->findTopUploaders(5),
+            'categoryStats'     => $repo->findStatsByCategory(),
         ]);
     }
 
@@ -251,6 +253,116 @@ final class AdminController
 
         Flash::set('success', 'Utilisateur mis à jour.');
         Response::redirect('?action=admin_users');
+    }
+
+    public function categories(): void
+    {
+        $this->requireAdmin();
+
+        View::render('admin/categories', [
+            'user'       => Auth::user(),
+            'flash'      => Flash::get(),
+            'csrf'       => Csrf::token(),
+            'categories' => (new CategoryRepository())->findAll(),
+        ]);
+    }
+
+    public function createCategory(): void
+    {
+        $this->requireAdmin();
+
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            Flash::set('danger', 'Jeton CSRF invalide.');
+            Response::redirect('?action=admin_categories');
+        }
+
+        $name  = trim($_POST['name'] ?? '');
+        $color = trim($_POST['color'] ?? '#6c757d');
+
+        if ($name === '') {
+            Flash::set('danger', 'Le nom de la catégorie est requis.');
+            Response::redirect('?action=admin_categories');
+        }
+
+        if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color)) {
+            $color = '#6c757d';
+        }
+
+        $repo = new CategoryRepository();
+
+        if ($repo->nameExists($name)) {
+            Flash::set('danger', 'Une catégorie avec ce nom existe déjà.');
+            Response::redirect('?action=admin_categories');
+        }
+
+        $repo->create($name, $color);
+
+        Flash::set('success', 'Catégorie créée.');
+        Response::redirect('?action=admin_categories');
+    }
+
+    public function updateCategory(): void
+    {
+        $this->requireAdmin();
+
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            Flash::set('danger', 'Jeton CSRF invalide.');
+            Response::redirect('?action=admin_categories');
+        }
+
+        $id    = (int) ($_POST['id'] ?? 0);
+        $name  = trim($_POST['name'] ?? '');
+        $color = trim($_POST['color'] ?? '#6c757d');
+
+        if ($name === '') {
+            Flash::set('danger', 'Le nom de la catégorie est requis.');
+            Response::redirect('?action=admin_categories');
+        }
+
+        if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color)) {
+            $color = '#6c757d';
+        }
+
+        $repo = new CategoryRepository();
+
+        if (!$repo->findById($id)) {
+            Flash::set('danger', 'Catégorie introuvable.');
+            Response::redirect('?action=admin_categories');
+        }
+
+        if ($repo->nameExists($name, $id)) {
+            Flash::set('danger', 'Une catégorie avec ce nom existe déjà.');
+            Response::redirect('?action=admin_categories');
+        }
+
+        $repo->update($id, $name, $color);
+
+        Flash::set('success', 'Catégorie mise à jour.');
+        Response::redirect('?action=admin_categories');
+    }
+
+    public function deleteCategory(): void
+    {
+        $this->requireAdmin();
+
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            Flash::set('danger', 'Jeton CSRF invalide.');
+            Response::redirect('?action=admin_categories');
+        }
+
+        $id = (int) ($_POST['id'] ?? 0);
+
+        $repo = new CategoryRepository();
+
+        if (!$repo->findById($id)) {
+            Flash::set('danger', 'Catégorie introuvable.');
+            Response::redirect('?action=admin_categories');
+        }
+
+        $repo->delete($id);
+
+        Flash::set('success', 'Catégorie supprimée.');
+        Response::redirect('?action=admin_categories');
     }
 
     public function deleteUser(): void

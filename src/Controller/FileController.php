@@ -7,6 +7,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Flash;
 use App\Core\Response;
+use App\Repository\CategoryRepository;
 use App\Repository\FileRepository;
 use App\Repository\ShareRepository;
 use App\Service\ChunkUploadService;
@@ -20,10 +21,11 @@ final class FileController
     {
         $repo = new FileRepository();
         $search = trim($_GET['search'] ?? '');
+        $categoryId = ($_GET['category'] ?? '') !== '' ? (int) $_GET['category'] : null;
         $page = max(1, (int) ($_GET['page'] ?? 1));
         $perPage = max(1, min(100, (int) Config::get('FILES_PER_PAGE', 10)));
 
-        $totalFiles = $repo->countAll($search);
+        $totalFiles = $repo->countAll($search, $categoryId);
         $totalPages = max(1, (int) ceil($totalFiles / $perPage));
 
         if ($page > $totalPages) {
@@ -31,7 +33,7 @@ final class FileController
         }
 
         $offset = ($page - 1) * $perPage;
-        $files = $repo->findPaginated($perPage, $offset, $search);
+        $files = $repo->findPaginated($perPage, $offset, $search, $categoryId);
 
         $startItem = $totalFiles > 0 ? $offset + 1 : 0;
         $endItem = min($offset + count($files), $totalFiles);
@@ -48,12 +50,16 @@ final class FileController
             $sharesByFileId[$fid] = $shareRepo->findActiveByFileId($fid);
         }
 
+        $categories = (new CategoryRepository())->findAll();
+
         View::render('file/dashboard', [
             'user' => Auth::user(),
             'files' => $files,
             'csrf' => Csrf::token(),
             'flash' => Flash::get(),
             'search' => $search,
+            'categoryId' => $categoryId,
+            'categories' => $categories,
             'page' => $page,
             'perPage' => $perPage,
             'totalFiles' => $totalFiles,
@@ -105,6 +111,8 @@ final class FileController
             $storage = new FileStorageService();
             $file = $storage->store($_FILES['file']);
 
+            $categoryId = ($_POST['category_id'] ?? '') !== '' ? (int) $_POST['category_id'] : null;
+
             $repo = new FileRepository();
             $repo->create([
                 'original_name' => $file['original_name'],
@@ -116,6 +124,7 @@ final class FileController
                 'storage_path' => $file['storage_path'],
                 'uploaded_by' => Auth::id(),
                 'created_at' => date('Y-m-d H:i:s'),
+                'category_id' => $categoryId,
             ]);
 
             if ($isAjax) {
@@ -262,6 +271,8 @@ final class FileController
                 (int)    $meta['total_size']
             );
 
+            $categoryId = ($_POST['category_id'] ?? '') !== '' ? (int) $_POST['category_id'] : null;
+
             $repo = new FileRepository();
             $repo->create([
                 'original_name' => $file['original_name'],
@@ -273,6 +284,7 @@ final class FileController
                 'storage_path'  => $file['storage_path'],
                 'uploaded_by'   => Auth::id(),
                 'created_at'    => date('Y-m-d H:i:s'),
+                'category_id'   => $categoryId,
             ]);
 
             echo json_encode(['success' => true, 'message' => 'Fichier uploadé avec succès.']);
@@ -302,6 +314,37 @@ final class FileController
         header('Content-Length: ' . filesize($file['storage_path']));
         readfile($file['storage_path']);
         exit;
+    }
+
+    public function update(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            Flash::set('danger', 'Jeton CSRF invalide.');
+            Response::redirect('?action=dashboard');
+        }
+
+        $id   = (int) ($_POST['id'] ?? 0);
+        $name = trim($_POST['original_name'] ?? '');
+
+        if ($name === '') {
+            Flash::set('danger', 'Le nom du fichier ne peut pas être vide.');
+            Response::redirect('?action=dashboard');
+        }
+
+        $repo = new FileRepository();
+        $file = $repo->findById($id);
+
+        if (!$file) {
+            Flash::set('danger', 'Fichier introuvable.');
+            Response::redirect('?action=dashboard');
+        }
+
+        $categoryId = ($_POST['category_id'] ?? '') !== '' ? (int) $_POST['category_id'] : null;
+
+        $repo->update($id, $name, $categoryId);
+
+        Flash::set('success', 'Fichier mis à jour.');
+        Response::redirect('?action=dashboard');
     }
 
     public function delete(): void
@@ -494,20 +537,23 @@ final class FileController
 
     public function simpleList(): void
     {
-        $repo = new FileRepository();
-        $search = trim($_GET['search'] ?? '');
+        $repo       = new FileRepository();
+        $search     = trim($_GET['search'] ?? '');
+        $categoryId = ($_GET['category'] ?? '') !== '' ? (int) $_GET['category'] : null;
 
-        $totalFiles = $repo->countAll($search);
-        $files = $repo->findPaginated($totalFiles > 0 ? $totalFiles : 1, 0, $search);
+        $totalFiles = $repo->countAll($search, $categoryId);
+        $files      = $repo->findPaginated($totalFiles > 0 ? $totalFiles : 1, 0, $search, $categoryId);
 
         View::render('file/simple-list', [
-            'user' => Auth::user(),
-            'files' => $files,
-            'flash' => Flash::get(),
-            'search' => $search,
-            'totalFiles' => $totalFiles,
-            'startItem' => $totalFiles > 0 ? 1 : 0,
-            'endItem' => $totalFiles,
+            'user'        => Auth::user(),
+            'files'       => $files,
+            'flash'       => Flash::get(),
+            'search'      => $search,
+            'categoryId'  => $categoryId,
+            'categories'  => (new CategoryRepository())->findAll(),
+            'totalFiles'  => $totalFiles,
+            'startItem'   => $totalFiles > 0 ? 1 : 0,
+            'endItem'     => $totalFiles,
         ]);
     }
 

@@ -96,6 +96,21 @@ final class StatsRepository
         return $result;
     }
 
+    public function findStatsByCategory(): array
+    {
+        return Database::connection()->query("
+            SELECT
+                COALESCE(c.name,  'Sans catégorie') AS name,
+                COALESCE(c.color, '#6c757d')        AS color,
+                COUNT(f.id)                         AS file_count,
+                COALESCE(SUM(f.size_bytes), 0)      AS total_size
+            FROM files f
+            LEFT JOIN categories c ON c.id = f.category_id
+            GROUP BY f.category_id
+            ORDER BY file_count DESC
+        ")->fetchAll();
+    }
+
     public function findTopUploaders(int $limit = 5): array
     {
         $stmt = Database::connection()->prepare("

@@ -3,6 +3,8 @@ use App\Core\View;
 
 $fileList          = is_array($files ?? null) ? $files : [];
 $searchTerm        = trim((string) ($search ?? ''));
+$activeCategoryId  = ($categoryId ?? null) !== null ? (int) $categoryId : null;
+$categoryList      = is_array($categories ?? null) ? $categories : [];
 $totalFileCount    = (int) ($totalFiles ?? count($fileList));
 $currentPage       = max(1, (int) ($page ?? 1));
 $totalPageCount    = max(1, (int) ($totalPages ?? 1));
@@ -23,7 +25,9 @@ $startPage = max(1, $currentPage - 2);
 $endPage   = min($totalPageCount, $currentPage + 2);
 
 $dashboardUrl = static fn (int $pageNumber): string
-    => '?action=dashboard&search=' . urlencode($searchTerm) . '&page=' . $pageNumber;
+    => '?action=dashboard&search=' . urlencode($searchTerm)
+       . ($activeCategoryId !== null ? '&category=' . $activeCategoryId : '')
+       . '&page=' . $pageNumber;
 
 $formatDate = static function (?string $date): string {
     if (empty($date)) {
@@ -82,6 +86,20 @@ $formatDate = static function (?string $date): string {
 
                         <div id="selected-file" class="small text-orange mt-3"></div>
                     </div>
+
+                    <?php if (!empty($categoryList)): ?>
+                        <div class="mb-3">
+                            <label for="upload-category" class="form-label small fw-semibold">Catégorie <span class="app-muted fw-normal">(optionnel)</span></label>
+                            <select name="category_id" id="upload-category" class="form-select app-input">
+                                <option value="">— Aucune —</option>
+                                <?php foreach ($categoryList as $cat): ?>
+                                    <option value="<?= (int) $cat['id'] ?>">
+                                        <?= View::e((string) $cat['name']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    <?php endif; ?>
 
                     <button type="submit" class="btn btn-orange w-100 fw-semibold">
                         Envoyer
@@ -193,12 +211,28 @@ $formatDate = static function (?string $date): string {
                             >
                         </div>
 
+                        <?php if (!empty($categoryList)): ?>
+                            <div class="col-md-4">
+                                <select name="category" class="form-select app-input">
+                                    <option value="">Toutes les catégories</option>
+                                    <?php foreach ($categoryList as $cat): ?>
+                                        <option
+                                            value="<?= (int) $cat['id'] ?>"
+                                            <?= $activeCategoryId === (int) $cat['id'] ? 'selected' : '' ?>
+                                        >
+                                            <?= View::e((string) $cat['name']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        <?php endif; ?>
+
                         <div class="col-md-4 d-flex gap-2">
                             <button type="submit" class="btn btn-orange flex-fill">
                                 Rechercher
                             </button>
 
-                            <?php if ($searchTerm !== ''): ?>
+                            <?php if ($searchTerm !== '' || $activeCategoryId !== null): ?>
                                 <a href="?action=dashboard&page=1" class="btn btn-outline-secondary">
                                     Reset
                                 </a>
@@ -206,6 +240,33 @@ $formatDate = static function (?string $date): string {
                         </div>
                     </div>
                 </form>
+
+                <?php if (!empty($categoryList)): ?>
+                    <div class="d-flex flex-wrap gap-1 mb-3">
+                        <a
+                            href="?action=dashboard&search=<?= urlencode($searchTerm) ?>&page=1"
+                            class="badge text-decoration-none <?= $activeCategoryId === null ? 'bg-dark' : 'app-badge' ?>"
+                            style="font-size: .8rem;"
+                        >
+                            Tous
+                        </a>
+                        <?php foreach ($categoryList as $cat): ?>
+                            <?php
+                            $cid   = (int) $cat['id'];
+                            $cname = (string) $cat['name'];
+                            $ccolor = (string) ($cat['color'] ?? '#6c757d');
+                            $isActive = $activeCategoryId === $cid;
+                            ?>
+                            <a
+                                href="?action=dashboard&search=<?= urlencode($searchTerm) ?>&category=<?= $cid ?>&page=1"
+                                class="badge text-decoration-none"
+                                style="font-size: .8rem; background-color: <?= View::e($ccolor) ?>; opacity: <?= $isActive ? '1' : '0.6' ?>;"
+                            >
+                                <?= View::e($cname) ?>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
 
                 <?php if (empty($fileList)): ?>
                     <div class="app-muted">
@@ -226,6 +287,8 @@ $formatDate = static function (?string $date): string {
                             $sizeBytes     = (int) ($file['size_bytes'] ?? 0);
                             $createdAt     = (string) ($file['created_at'] ?? '');
                             $uploaderEmail = (string) ($file['uploader_email'] ?? '');
+                            $catName       = (string) ($file['category_name'] ?? '');
+                            $catColor      = (string) ($file['category_color'] ?? '#6c757d');
                             $iconMeta = View::fileIconMeta($extension);
                             ?>
                             <article class="file-card h-100">
@@ -244,9 +307,20 @@ $formatDate = static function (?string $date): string {
                                         </div>
                                     </div>
 
-                                    <span class="file-card-type">
-                                        <?= View::e($extension !== '' ? strtoupper($extension) : 'FILE') ?>
-                                    </span>
+                                    <div class="d-flex flex-column align-items-end gap-1">
+                                        <span class="file-card-type">
+                                            <?= View::e($extension !== '' ? strtoupper($extension) : 'FILE') ?>
+                                        </span>
+                                        <?php if ($catName !== ''): ?>
+                                            <span
+                                                class="badge"
+                                                style="font-size: .7rem; background-color: <?= View::e($catColor) ?>;"
+                                                title="Catégorie : <?= View::e($catName) ?>"
+                                            >
+                                                <?= View::e($catName) ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
 
                                 <div class="file-card-meta">
@@ -300,6 +374,20 @@ $formatDate = static function (?string $date): string {
                                         data-bs-target="#shareModal"
                                     >
                                         <i class="bi bi-share"></i>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-card-action btn-card-edit js-edit-btn"
+                                        title="Modifier"
+                                        aria-label="Modifier <?= View::e($originalName) ?>"
+                                        data-file-id="<?= $fileId ?>"
+                                        data-file-name="<?= View::e($originalName) ?>"
+                                        data-category-id="<?= (int) ($file['category_id'] ?? 0) ?>"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editFileModal"
+                                    >
+                                        <i class="bi bi-pencil"></i>
                                     </button>
 
                                     <form
@@ -594,6 +682,56 @@ foreach ($fileList as $file):
                     Fermer
                 </button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal édition fichier -->
+<div class="modal fade" id="editFileModal" tabindex="-1" aria-labelledby="editFileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content preview-modal-content">
+            <div class="modal-header preview-modal-header">
+                <h5 class="modal-title preview-modal-title" id="editFileModalLabel">
+                    <i class="bi bi-pencil me-2"></i>Modifier le fichier
+                </h5>
+                <button type="button" class="btn-close preview-modal-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <form method="post" action="?action=file_update">
+                <div class="modal-body">
+                    <input type="hidden" name="_csrf" value="<?= View::e($csrf ?? '') ?>">
+                    <input type="hidden" name="id" id="edit-file-id">
+
+                    <div class="mb-3">
+                        <label for="edit-file-name" class="form-label small fw-semibold">Nom du fichier</label>
+                        <input
+                            type="text"
+                            id="edit-file-name"
+                            name="original_name"
+                            class="form-control app-input"
+                            maxlength="255"
+                            required
+                        >
+                    </div>
+
+                    <?php if (!empty($categoryList)): ?>
+                        <div class="mb-1">
+                            <label for="edit-file-category" class="form-label small fw-semibold">Catégorie <span class="app-muted fw-normal">(optionnel)</span></label>
+                            <select id="edit-file-category" name="category_id" class="form-select app-input">
+                                <option value="">— Aucune —</option>
+                                <?php foreach ($categoryList as $cat): ?>
+                                    <option value="<?= (int) $cat['id'] ?>">
+                                        <?= View::e((string) $cat['name']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <div class="modal-footer preview-modal-footer">
+                    <button type="button" class="btn btn-outline-orange btn-modal-action" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-orange btn-modal-action">Enregistrer</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

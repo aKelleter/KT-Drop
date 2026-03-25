@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const CHUNK_THRESHOLD = 5 * 1024 * 1024;  // 5 Mo
         const CHUNK_SIZE      = 2 * 1024 * 1024;  // 2 Mo par chunk
 
-        async function uploadChunked(file, csrfToken) {
+        async function uploadChunked(file, csrfToken, categoryId) {
             const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
             // 1. Init de la session
@@ -134,6 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const finalData = new FormData();
             finalData.append('_csrf', csrfToken);
             finalData.append('upload_id', uploadId);
+            if (categoryId) { finalData.append('category_id', categoryId); }
 
             const finalResp = await fetch('?action=upload_chunk_finalize', {
                 method: 'POST',
@@ -155,8 +156,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const file      = input.files[0];
-            const csrfToken = uploadForm.querySelector('input[name="_csrf"]').value;
+            const file       = input.files[0];
+            const csrfToken  = uploadForm.querySelector('input[name="_csrf"]').value;
+            const categoryId = (uploadForm.querySelector('select[name="category_id"]') || {}).value || '';
 
             progressWrapper.classList.remove('d-none');
             uploadForm.classList.add('upload-is-busy');
@@ -169,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (file.size > CHUNK_THRESHOLD) {
                 // Upload découpe en chunks
                 try {
-                    await uploadChunked(file, csrfToken);
+                    await uploadChunked(file, csrfToken, categoryId);
                     progressBar.style.width = '100%';
                     progressBar.textContent = '100%';
                     statusText.textContent  = 'Upload terminé.';
@@ -325,6 +327,21 @@ document.addEventListener('DOMContentLoaded', () => {
         previewDownloadLink.href = '#';
         previewDownloadLink.classList.add('d-none');
     });
+
+    // Edit file modal
+    const editFileModalEl = document.getElementById('editFileModal');
+    if (editFileModalEl) {
+        editFileModalEl.addEventListener('show.bs.modal', (event) => {
+            const btn = event.relatedTarget;
+            if (!btn) return;
+            document.getElementById('edit-file-id').value   = btn.dataset.fileId   || '';
+            document.getElementById('edit-file-name').value = btn.dataset.fileName || '';
+            const catSelect = document.getElementById('edit-file-category');
+            if (catSelect) {
+                catSelect.value = btn.dataset.categoryId || '';
+            }
+        });
+    }
 
     // Share modal
     const shareModalEl = document.getElementById('shareModal');

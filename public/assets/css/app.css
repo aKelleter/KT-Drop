@@ -336,10 +336,12 @@ body.app-body {
 }
 
 .file-card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(255, 122, 0, 0.22);
-    background: rgba(255, 122, 0, 0.045);
-    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.07);
+    transform: translateY(-3px);
+    border-color: rgba(255, 122, 0, 0.35);
+    background: rgba(255, 122, 0, 0.03);
+    box-shadow:
+        0 8px 24px rgba(255, 122, 0, 0.14),
+        0 4px 16px rgba(0, 0, 0, 0.10);
 }
 
 .file-card-header {
@@ -440,7 +442,6 @@ body.app-body {
 
 .file-card-actions .btn-card-download:hover,
 .file-card-actions .btn-card-download:focus {
-    transform: translateY(-1px);
     box-shadow: 0 8px 16px rgba(255, 140, 26, 0.25);
     color: #fff;
 }
@@ -458,6 +459,21 @@ body.app-body {
     border-color: #0d6efd;
     transform: translateY(-1px);
     box-shadow: 0 8px 16px rgba(13, 110, 253, 0.18);
+}
+
+.file-card-actions .btn-card-edit {
+    background: #f0fdf4;
+    color: #198754;
+    border-color: #b6e5c8;
+}
+
+.file-card-actions .btn-card-edit:hover,
+.file-card-actions .btn-card-edit:focus {
+    background: #198754;
+    color: #fff;
+    border-color: #198754;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(25, 135, 84, 0.18);
 }
 
 .file-card-actions .btn-card-delete {
