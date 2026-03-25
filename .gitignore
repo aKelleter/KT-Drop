@@ -1,5 +1,8 @@
 .env.local
 
+/vendor/
+/database/*
+
 /storage/*
 !/storage/.gitkeep
 !/storage/files/
@@ -14,6 +17,4 @@
 
 /storage/tmp/*
 !/storage/tmp/.gitkeep
-
-/database/*
 
