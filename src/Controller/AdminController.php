@@ -100,7 +100,7 @@ final class AdminController
             'user'              => Auth::user(),
             'flash'             => Flash::get(),
             'global'            => $repo->findGlobal(),
-            'extensions'        => $repo->findTopExtensions(8),
+            'extensions'        => $repo->findTopExtensions(30),
             'activity'          => $repo->findUploadsPerDay(30),
             'uploaders'         => $repo->findTopUploaders(5),
             'categoryStats'     => $repo->findStatsByCategory(),
