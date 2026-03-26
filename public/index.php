@@ -1,7 +1,66 @@
 <?php
 declare(strict_types=1);
 
-require dirname(__DIR__) . '/config/bootstrap.php';
+// ── Pre-flight checks ─────────────────────────────────────────────────────────
+$_basePath = dirname(__DIR__);
+
+function _ktdrop_fatal(string $title, string $body, string $hint): never
+{
+    http_response_code(500);
+    echo '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
+       . '<meta name="viewport" content="width=device-width,initial-scale=1">'
+       . '<title>KT-Drop — ' . $title . '</title>'
+       . '<style>'
+       . '*{box-sizing:border-box;margin:0;padding:0}'
+       . 'body{min-height:100vh;display:flex;align-items:center;justify-content:center;'
+       .      'background:#f5f5f7;font-family:system-ui,sans-serif;color:#1d1d1f;padding:1.5rem}'
+       . '.card{background:#fff;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.08);'
+       .       'padding:2.5rem 2rem;max-width:520px;width:100%}'
+       . '.icon{font-size:2.2rem;margin-bottom:1rem}'
+       . 'h1{font-size:1.25rem;font-weight:700;margin-bottom:.6rem;color:#1d1d1f}'
+       . 'p{font-size:.95rem;line-height:1.55;color:#444}'
+       . '.hint{margin-top:1.25rem;padding:.9rem 1rem;background:#fff7f0;'
+       .       'border-left:3px solid #ff7a00;border-radius:6px;font-size:.88rem;color:#555}'
+       . 'code{background:#f0f0f0;border-radius:4px;padding:.1em .4em;'
+       .      'font-family:monospace;font-size:.92em;color:#c0392b}'
+       . '</style></head><body>'
+       . '<div class="card">'
+       . '<div class="icon">⚠️</div>'
+       . '<h1>' . $title . '</h1>'
+       . '<p>' . $body . '</p>'
+       . '<div class="hint">' . $hint . '</div>'
+       . '</div></body></html>';
+    exit;
+}
+
+if (!file_exists($_basePath . '/vendor/autoload.php')) {
+    _ktdrop_fatal(
+        'Dépendances manquantes',
+        'Le répertoire <code>vendor/</code> est introuvable. L\'application ne peut pas démarrer.',
+        'Exécutez <code>composer install</code> à la racine du projet, puis rechargez la page.'
+    );
+}
+
+if (!file_exists($_basePath . '/.env.local')) {
+    _ktdrop_fatal(
+        'Fichier de configuration manquant',
+        'Le fichier <code>.env.local</code> est introuvable. L\'application ne peut pas démarrer.',
+        'Copiez <code>.env.local.example</code> en <code>.env.local</code> et ajustez les valeurs selon votre environnement.'
+    );
+}
+
+require $_basePath . '/config/bootstrap.php';
+
+$_dbRelPath = ltrim((string) ($_ENV['DB_DATABASE'] ?? 'database/app.sqlite'), '/');
+if (!file_exists($_basePath . '/' . $_dbRelPath)) {
+    _ktdrop_fatal(
+        'Base de données introuvable',
+        'Le fichier de base de données <code>' . htmlspecialchars($_dbRelPath) . '</code> est introuvable.',
+        'Lancez le script d\'initialisation de la base ou vérifiez la valeur de <code>DB_DATABASE</code> dans <code>.env.local</code>.'
+    );
+}
+unset($_basePath, $_dbRelPath);
+// ── End pre-flight ────────────────────────────────────────────────────────────
 
 use App\Controller\AdminController;
 use App\Controller\AuthController;
