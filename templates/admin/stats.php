@@ -15,6 +15,11 @@ $activeShares = (int)   ($global['active_shares'] ?? 0);
 $totalUsers   = (int)   ($global['total_users']   ?? 0);
 $adminCount   = (int)   ($global['admin_count']   ?? 0);
 $editorCount  = (int)   ($global['editor_count']  ?? 0);
+$diskTotal    = (int)   ($global['disk_total']    ?? 0);
+$diskFree     = (int)   ($global['disk_free']     ?? 0);
+$diskUsed     = (int)   ($global['disk_used']     ?? 0);
+$diskUsedPct  = $diskTotal > 0 ? round($diskUsed / $diskTotal * 100, 1) : 0;
+$appUsedPct   = $diskTotal > 0 ? min(100, round($totalSize / $diskTotal * 100, 2)) : 0;
 
 $maxExtCount  = max(1, ...array_map(fn($r) => (int) $r['file_count'], $extensions ?: [['file_count' => 1]]));
 $maxDayCount  = max(1, ...array_map(fn($r) => (int) $r['file_count'], $activity   ?: [['file_count' => 1]]));
@@ -61,6 +66,20 @@ $maxUploads   = max(1, ...array_map(fn($r) => (int) $r['file_count'], $uploaders
                 <div class="stats-kpi-label">Espace occupé</div>
                 <?php if ($totalFiles > 0): ?>
                     <div class="stats-kpi-sub">moy. <?= View::e(View::formatBytes((int) $avgSize)) ?> / fichier</div>
+                <?php endif; ?>
+                <?php if ($diskTotal > 0): ?>
+                    <div class="stats-disk-info mt-2">
+                        <div class="d-flex justify-content-between" style="font-size:.72rem;color:var(--app-muted,#6c757d);margin-bottom:3px;">
+                            <span>Disque : <?= View::e(View::formatBytes($diskUsed)) ?> / <?= View::e(View::formatBytes($diskTotal)) ?></span>
+                            &nbsp;<span>(<?= $diskUsedPct ?>%)</span>
+                        </div>
+                        <div class="stats-hbar-track" style="height:5px;">
+                            <div class="stats-hbar-fill" style="width:<?= $diskUsedPct ?>%;background-color:<?= $diskUsedPct >= 90 ? '#f87171' : ($diskUsedPct >= 70 ? '#fb923c' : '#60a5fa') ?>;"></div>
+                        </div>
+                        <div style="font-size:.7rem;color:var(--app-muted,#6c757d);margin-top:3px;">
+                            <?= View::e(View::formatBytes($diskFree)) ?> libre · appli <?= $appUsedPct ?>%
+                        </div>
+                    </div>
                 <?php endif; ?>
             </div>
         </div>

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Config\Config;
 use App\Core\Database;
 
 final class StatsRepository
@@ -35,6 +36,11 @@ final class StatsRepository
             FROM users
         ")->fetch();
 
+        $storagePath = Config::path((string) ($_ENV['STORAGE_PATH'] ?? 'storage/files'));
+        $diskTotal   = @disk_total_space($storagePath) ?: 0;
+        $diskFree    = @disk_free_space($storagePath)  ?: 0;
+        $diskUsed    = $diskTotal - $diskFree;
+
         return [
             'total_files'   => (int)   ($files['total_files']     ?? 0),
             'total_size'    => (int)   ($files['total_size']       ?? 0),
@@ -43,6 +49,9 @@ final class StatsRepository
             'total_users'   => (int)   ($users['total_users']      ?? 0),
             'admin_count'   => (int)   ($users['admin_count']      ?? 0),
             'editor_count'  => (int)   ($users['editor_count']     ?? 0),
+            'disk_total'    => (int)   $diskTotal,
+            'disk_free'     => (int)   $diskFree,
+            'disk_used'     => (int)   $diskUsed,
         ];
     }
 
