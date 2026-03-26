@@ -29,7 +29,8 @@ Application web de dépôt de fichiers auto-hébergée, développée en PHP nati
 - **Filtrage par catégorie** (badges cliquables + select) sur le dashboard et la vue liste
 - Pagination configurable
 - Popover des extensions autorisées dans la zone d'upload (pills visuelles)
-- Vue liste simplifiée (tous les fichiers sans pagination) avec filtres catégorie
+- Vue liste simplifiée (tous les fichiers sans pagination) avec filtres catégorie, icônes d'aperçu et de téléchargement
+- **Bouton "remonter en haut"** flottant sur toutes les pages (apparaît après 200 px de défilement)
 
 ### Catégories
 - Création de catégories avec nom et couleur personnalisable
@@ -51,7 +52,7 @@ Application web de dépôt de fichiers auto-hébergée, développée en PHP nati
 - **Gestion des utilisateurs** : création, édition, suppression, gestion des rôles
 - **Gestion des catégories** : création, édition (couleur + nom), suppression
 - **Partages actifs** : liste globale de tous les liens non expirés avec révocation
-- **Statistiques** : vue d'ensemble des fichiers, tailles, extensions, activité et répartition par catégorie
+- **Statistiques** : vue d'ensemble des fichiers, tailles, extensions, activité, répartition par catégorie et **répartition par tranche de taille**
 - **Paramètres** : configuration des extensions autorisées via interface web (stockées en base)
 - Toutes les actions admin protégées CSRF et réservées au rôle `admin`
 
@@ -120,6 +121,8 @@ Contenu type de `.env.local` en production :
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://votre-domaine.be/
+
+DB_DATABASE=database/app.sqlite
 ```
 
 > `.env.local` est ignoré par git (`.gitignore`). Il ne sera jamais écrasé lors des mises à jour.
@@ -336,6 +339,20 @@ KT-Drop/
 | `categories` | Catégories de fichiers (nom, couleur) |
 | `shares` | Liens de partage (token, expiration, auteur) |
 | `settings` | Configuration applicative clé/valeur |
+
+---
+
+## Vérifications au démarrage (pre-flight)
+
+Avant tout chargement du framework, `public/index.php` effectue trois contrôles et affiche une page d'erreur explicite en cas de problème :
+
+| Contrôle | Cause | Message affiché |
+|---|---|---|
+| `vendor/autoload.php` absent | `composer install` non exécuté | "Dépendances manquantes" |
+| `.env.local` absent | Fichier de config non créé sur le serveur | "Fichier de configuration manquant" |
+| Fichier SQLite absent | DB non initialisée ou mauvais chemin `DB_DATABASE` | "Base de données introuvable" |
+
+Ces vérifications évitent une page blanche ou une erreur PHP brute en production.
 
 ---
 
