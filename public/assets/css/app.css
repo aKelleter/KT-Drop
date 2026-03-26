@@ -1491,3 +1491,40 @@ body.app-body {
         font-size: 1.05rem;
         letter-spacing: 0.2px;
     }
+
+
+/* ── Back to top ─────────────────────────────────────── */
+.back-to-top {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 1050;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    border: none;
+    background-color: var(--app-orange);
+    color: #fff;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(255, 122, 0, 0.4);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: opacity .25s ease, visibility .25s ease, transform .25s ease, background-color .15s ease;
+    cursor: pointer;
+}
+
+.back-to-top:hover,
+.back-to-top:focus-visible {
+    background-color: var(--app-orange-hover);
+    outline: none;
+}
+
+.back-to-top.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}

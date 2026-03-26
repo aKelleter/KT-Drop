@@ -160,17 +160,72 @@ $hasFilter = $searchTerm !== '' || $activeCategoryId !== null;
                                     <?php endif; ?>
                                 </div>
 
-                                <a
-                                    href="?action=download&id=<?= $fileId ?>"
-                                    class="btn btn-sm btn-outline-orange simple-page-file-download"
-                                >
-                                    Télécharger
-                                </a>
+                                <div class="file-card-actions" style="margin-top:0;padding-top:0;justify-content:flex-end;">
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-card-action btn-card-preview js-preview-btn"
+                                        title="Aperçu"
+                                        aria-label="Aperçu <?= View::e($originalName) ?>"
+                                        data-preview-url="?action=preview&id=<?= $fileId ?>"
+                                        data-download-url="?action=download&id=<?= $fileId ?>"
+                                        data-file-name="<?= View::e($originalName) ?>"
+                                    >
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+
+                                    <a
+                                        href="?action=download&id=<?= $fileId ?>"
+                                        class="btn btn-sm btn-card-action btn-card-download"
+                                        title="Télécharger"
+                                        aria-label="Télécharger <?= View::e($originalName) ?>"
+                                    >
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                </div>
                             </li>
                         <?php endforeach; ?>
                     </ul>
                 <?php endif; ?>
 
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="filePreviewModal" tabindex="-1" aria-labelledby="filePreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content preview-modal-content">
+            <div class="modal-header preview-modal-header">
+                <h5 class="modal-title preview-modal-title" id="filePreviewModalLabel">
+                    Aperçu du fichier
+                </h5>
+                <button
+                    type="button"
+                    class="btn-close preview-modal-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Fermer"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <div id="file-preview-content" class="file-preview-content">
+                    <div class="file-preview-empty">
+                        Sélectionnez un fichier à prévisualiser.
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer preview-modal-footer">
+                <a href="#" id="file-preview-download-link" class="btn btn-orange btn-modal-action d-none">
+                    Télécharger
+                </a>
+                <button
+                    type="button"
+                    class="btn btn-outline-orange btn-modal-action"
+                    data-bs-dismiss="modal"
+                >
+                    Fermer
+                </button>
             </div>
         </div>
     </div>

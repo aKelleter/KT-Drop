@@ -77,6 +77,10 @@ $appUpd = Config::get('APP_UPD', '0.0.0');
     </footer>
 </div>
 
+<button id="back-to-top" class="back-to-top" aria-label="Remonter en haut de la page" title="Haut de page">
+    <i class="bi bi-arrow-up"></i>
+</button>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script defer src="<?= View::asset('js/app.js') ?>"></script>
 </body>

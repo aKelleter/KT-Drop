@@ -235,7 +235,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3000);
     });
 
-     const modalElement = document.getElementById('filePreviewModal');
+    const backToTopBtn = document.getElementById('back-to-top');
+    if (backToTopBtn) {
+        window.addEventListener('scroll', () => {
+            backToTopBtn.classList.toggle('is-visible', window.scrollY > 200);
+        }, { passive: true });
+
+        backToTopBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    const modalElement = document.getElementById('filePreviewModal');
 
     if (!modalElement || typeof bootstrap === 'undefined') {
         return;
