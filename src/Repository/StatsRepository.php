@@ -111,6 +111,57 @@ final class StatsRepository
         ")->fetchAll();
     }
 
+    public function findStatsBySizeRange(): array
+    {
+        $rows = Database::connection()->query("
+            SELECT
+                CASE
+                    WHEN size_bytes <        102400 THEN 1
+                    WHEN size_bytes <       1048576 THEN 2
+                    WHEN size_bytes <      10485760 THEN 3
+                    WHEN size_bytes <     104857600 THEN 4
+                    ELSE                            5
+                END AS sort_order,
+                COUNT(*)        AS file_count,
+                SUM(size_bytes) AS total_size
+            FROM files
+            GROUP BY sort_order
+            ORDER BY sort_order ASC
+        ")->fetchAll();
+
+        $labels = [
+            1 => '< 100 Ko',
+            2 => '100 Ko – 1 Mo',
+            3 => '1 Mo – 10 Mo',
+            4 => '10 Mo – 100 Mo',
+            5 => '> 100 Mo',
+        ];
+        $colors = [
+            1 => '#4ade80',
+            2 => '#60a5fa',
+            3 => '#fb923c',
+            4 => '#f87171',
+            5 => '#c084fc',
+        ];
+
+        $indexed = [];
+        foreach ($rows as $row) {
+            $indexed[(int) $row['sort_order']] = $row;
+        }
+
+        $result = [];
+        foreach ($labels as $order => $label) {
+            $result[] = [
+                'label'      => $label,
+                'color'      => $colors[$order],
+                'file_count' => (int) ($indexed[$order]['file_count'] ?? 0),
+                'total_size' => (int) ($indexed[$order]['total_size'] ?? 0),
+            ];
+        }
+
+        return $result;
+    }
+
     public function findTopUploaders(int $limit = 5): array
     {
         $stmt = Database::connection()->prepare("

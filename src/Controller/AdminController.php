@@ -104,6 +104,7 @@ final class AdminController
             'activity'          => $repo->findUploadsPerDay(30),
             'uploaders'         => $repo->findTopUploaders(5),
             'categoryStats'     => $repo->findStatsByCategory(),
+            'sizeStats'         => $repo->findStatsBySizeRange(),
         ]);
     }
 

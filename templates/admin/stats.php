@@ -6,6 +6,7 @@ $extensions     = is_array($extensions     ?? null) ? $extensions     : [];
 $activity       = is_array($activity       ?? null) ? $activity       : [];
 $uploaders      = is_array($uploaders      ?? null) ? $uploaders      : [];
 $categoryStats  = is_array($categoryStats  ?? null) ? $categoryStats  : [];
+$sizeStats      = is_array($sizeStats      ?? null) ? $sizeStats      : [];
 
 $totalFiles   = (int)   ($global['total_files']   ?? 0);
 $totalSize    = (int)   ($global['total_size']    ?? 0);
@@ -215,6 +216,61 @@ $totalCatFiles = array_sum(array_map(fn($r) => (int) $r['file_count'], $category
                         <div
                             class="stats-hbar-fill"
                             style="width:<?= $pct ?>%;<?= !$isNone ? 'background-color:' . View::e($color) . ';' : '' ?>"
+                        ></div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- Répartition par taille de fichier -->
+<?php
+$maxSizeCount  = max(1, ...array_map(fn($r) => (int) $r['file_count'], $sizeStats ?: [['file_count' => 1]]));
+$totalSizeFiles = array_sum(array_map(fn($r) => (int) $r['file_count'], $sizeStats));
+?>
+<?php if ($totalSizeFiles > 0): ?>
+<div class="card app-card shadow-soft mb-3">
+    <div class="card-body">
+        <h2 class="h6 app-section-title mb-3">
+            <i class="bi bi-layout-wtf me-2"></i>Répartition par taille de fichier
+        </h2>
+        <div class="d-flex flex-column gap-3">
+            <?php foreach ($sizeStats as $range): ?>
+                <?php
+                $count    = (int)    $range['file_count'];
+                $size     = (int)    $range['total_size'];
+                $label    = (string) $range['label'];
+                $color    = (string) $range['color'];
+                $pct      = $count > 0 ? max(2, (int) round($count / $maxSizeCount * 100)) : 0;
+                $sharePct = $totalSizeFiles > 0 ? round($count / $totalSizeFiles * 100, 1) : 0;
+                ?>
+                <div>
+                    <div class="d-flex justify-content-between align-items-baseline mb-1">
+                        <div class="d-flex align-items-center gap-2">
+                            <span
+                                class="d-inline-block rounded-circle flex-shrink-0"
+                                style="width:10px;height:10px;background-color:<?= View::e($color) ?>;"
+                            ></span>
+                            <span class="small fw-semibold <?= $count === 0 ? 'app-muted' : '' ?>">
+                                <?= View::e($label) ?>
+                            </span>
+                        </div>
+                        <span class="small app-muted ms-3 text-nowrap">
+                            <?php if ($count > 0): ?>
+                                <?= $count ?> fichier<?= $count > 1 ? 's' : '' ?>
+                                &middot; <?= View::e(View::formatBytes($size)) ?>
+                                &middot; <?= $sharePct ?>%
+                            <?php else: ?>
+                                aucun fichier
+                            <?php endif; ?>
+                        </span>
+                    </div>
+                    <div class="stats-hbar-track">
+                        <div
+                            class="stats-hbar-fill"
+                            style="width:<?= $pct ?>%;<?= $count > 0 ? 'background-color:' . View::e($color) . ';' : '' ?>"
                         ></div>
                     </div>
                 </div>
