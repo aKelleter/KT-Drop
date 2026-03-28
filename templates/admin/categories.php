@@ -5,12 +5,12 @@ $categoryList = is_array($categories ?? null) ? $categories : [];
 ?>
 
 <?php if (!empty($flash)): ?>
-    <div class="alert text-center alert-<?= View::e($flash['type'] ?? 'info') ?> shadow-sm">
+    <div class="alert mt-4 text-center alert-<?= View::e($flash['type'] ?? 'info') ?> shadow-sm">
         <?= View::e($flash['message'] ?? '') ?>
     </div>
 <?php endif; ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+<div class="d-flex justify-content-between align-items-center mt-4 mb-4 flex-wrap gap-2">
     <div>
         <h1 class="h4 mb-1 app-section-title">Catégories</h1>
         <p class="small app-muted mb-0">Gérez les catégories pour organiser les fichiers.</p>

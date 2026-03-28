@@ -12,12 +12,12 @@ $formatDate = static function (?string $date): string {
 ?>
 
 <?php if (!empty($flash)): ?>
-    <div class="alert text-center alert-<?= View::e($flash['type'] ?? 'info') ?> shadow-sm">
+    <div class="alert mt-4 text-center alert-<?= View::e($flash['type'] ?? 'info') ?> shadow-sm">
         <?= View::e($flash['message'] ?? '') ?>
     </div>
 <?php endif; ?>
 
-<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+<div class="d-flex align-items-center justify-content-between mt-4 mb-4 flex-wrap gap-3">
     <div>
         <h1 class="h4 mb-0 app-section-title">Partages actifs</h1>
         <p class="small app-muted mb-0 mt-1">

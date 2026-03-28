@@ -8,7 +8,7 @@ use App\Core\View;
     </div>
 <?php endif; ?>
 
-<div class="mb-4">
+<div class="mt-4 mb-4">
     <h1 class="h4 mb-1 app-section-title">Administration</h1>
     <p class="small app-muted mb-0">Gérez les paramètres et les ressources de l'application.</p>
 </div>

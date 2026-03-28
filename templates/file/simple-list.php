@@ -13,7 +13,7 @@ $hasFilter = $searchTerm !== '' || $activeCategoryId !== null;
 ?>
 
 <?php if (!empty($flash)): ?>
-    <div class="alert text-center alert-<?= View::e($flash['type'] ?? 'info') ?> shadow-sm">
+    <div class="alert mt-4 text-center alert-<?= View::e($flash['type'] ?? 'info') ?> shadow-sm">
         <?= View::e($flash['message'] ?? '') ?>
     </div>
 <?php endif; ?>

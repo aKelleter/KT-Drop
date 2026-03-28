@@ -25,19 +25,20 @@ $roleLabel = static function (string $role): string {
 ?>
 
 <?php if (!empty($flash)): ?>
-    <div class="alert text-center alert-<?= View::e($flash['type'] ?? 'info') ?> shadow-sm">
+    <div class="alert mt-4 text-center alert-<?= View::e($flash['type'] ?? 'info') ?> shadow-sm">
         <?= View::e($flash['message'] ?? '') ?>
     </div>
 <?php endif; ?>
 
-<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+<div class="d-flex align-items-center justify-content-between mt-4 mb-4 flex-wrap gap-3">
     <div>
         <h1 class="h4 mb-0 app-section-title">Gestion des utilisateurs</h1>
         <p class="small app-muted mb-0 mt-1">
             <?= $totalUsers ?> utilisateur<?= $totalUsers > 1 ? 's' : '' ?> &middot;
             <?= $totalAdmins ?> admin<?= $totalAdmins > 1 ? 's' : '' ?>
-        </p>
+        </p>   
     </div>
+    
     <button
         class="btn btn-orange btn-sm"
         data-bs-toggle="modal"
@@ -45,6 +46,9 @@ $roleLabel = static function (string $role): string {
     >
         <i class="bi bi-person-plus me-1"></i> Ajouter un utilisateur
     </button>
+    <a href="?action=admin" class="btn btn-outline-orange btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Retour
+    </a>
 </div>
 
 <div class="card app-card shadow-soft">

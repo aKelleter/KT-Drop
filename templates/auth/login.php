@@ -7,7 +7,7 @@
                 <h1 class="h3 text-center mb-4 app-title">Connexion</h1>
 
                 <?php if (!empty($flash)): ?>
-                    <div class="alert alert-<?= View::e($flash['type']) ?>">
+                    <div class="alert mt-4 alert-<?= View::e($flash['type']) ?>">
                         <?= View::e($flash['message']) ?>
                     </div>
                 <?php endif; ?>

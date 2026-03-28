@@ -3,7 +3,7 @@ use App\Core\View;
 ?>
 
 <?php if (!empty($flash)): ?>
-    <div class="alert text-center alert-<?= View::e($flash['type'] ?? 'info') ?> shadow-sm">
+    <div class="alert mt-4 text-center alert-<?= View::e($flash['type'] ?? 'info') ?> shadow-sm">
         <?= $flash['message'] ?? '' ?>
     </div>
 <?php endif; ?>
@@ -33,13 +33,13 @@ use App\Core\View;
     </script>
 <?php endif; ?>
 
-<div class="mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+<div class="mb-4 mt-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
     <div>
         <h1 class="h4 mb-1 app-section-title">Tokens API</h1>
         <p class="small app-muted mb-0">Gérez les clés d'accès à l'API REST.</p>
     </div>
-    <a href="?action=admin" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Administration
+    <a href="?action=admin" class="btn btn-outline-orange btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Retour
     </a>
 </div>
 
