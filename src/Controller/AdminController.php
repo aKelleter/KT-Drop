@@ -9,6 +9,7 @@ use App\Core\Csrf;
 use App\Core\Flash;
 use App\Core\Response;
 use App\Core\View;
+use App\Repository\ApiTokenRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\SettingsRepository;
 use App\Repository\ShareRepository;
@@ -364,6 +365,68 @@ final class AdminController
 
         Flash::set('success', 'Catégorie supprimée.');
         Response::redirect('?action=admin_categories');
+    }
+
+    public function apiTokens(): void
+    {
+        $this->requireAdmin();
+
+        $newToken = $_SESSION['new_api_token'] ?? null;
+        unset($_SESSION['new_api_token']);
+
+        View::render('admin/api-tokens', [
+            'user'     => Auth::user(),
+            'csrf'     => Csrf::token(),
+            'flash'    => Flash::get(),
+            'tokens'   => (new ApiTokenRepository())->findAll(),
+            'users'    => (new UserRepository())->findAll(),
+            'newToken' => $newToken,
+        ]);
+    }
+
+    public function createApiToken(): void
+    {
+        $this->requireAdmin();
+
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            Flash::set('danger', 'Jeton CSRF invalide.');
+            Response::redirect('?action=admin_api_tokens');
+        }
+
+        $userId = (int) ($_POST['user_id'] ?? 0);
+        $name   = trim($_POST['name'] ?? '');
+
+        if ($name === '') {
+            Flash::set('danger', 'Le nom du token est obligatoire.');
+            Response::redirect('?action=admin_api_tokens');
+        }
+
+        if (!(new UserRepository())->findById($userId)) {
+            Flash::set('danger', 'Utilisateur introuvable.');
+            Response::redirect('?action=admin_api_tokens');
+        }
+
+        $token = bin2hex(random_bytes(32));
+        (new ApiTokenRepository())->create($userId, $name, $token);
+
+        $_SESSION['new_api_token'] = $token;
+        Response::redirect('?action=admin_api_tokens');
+    }
+
+    public function revokeApiToken(): void
+    {
+        $this->requireAdmin();
+
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            Flash::set('danger', 'Jeton CSRF invalide.');
+            Response::redirect('?action=admin_api_tokens');
+        }
+
+        $id = (int) ($_POST['id'] ?? 0);
+        (new ApiTokenRepository())->delete($id);
+
+        Flash::set('success', 'Token révoqué.');
+        Response::redirect('?action=admin_api_tokens');
     }
 
     public function deleteUser(): void

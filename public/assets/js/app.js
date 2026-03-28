@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const alerts = document.querySelectorAll('.alert');
+    const alerts = document.querySelectorAll('.alert:not([data-persistent])');
 
     alerts.forEach((alert) => {
         setTimeout(() => {

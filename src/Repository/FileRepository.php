@@ -92,7 +92,15 @@ final class FileRepository
 
     public function findById(int $id): array|false
     {
-        $stmt = Database::connection()->prepare('SELECT * FROM files WHERE id = :id LIMIT 1');
+        $stmt = Database::connection()->prepare("
+            SELECT f.*, u.email AS uploader_email,
+                   c.name AS category_name, c.color AS category_color
+            FROM files f
+            INNER JOIN users u ON u.id = f.uploaded_by
+            LEFT JOIN categories c ON c.id = f.category_id
+            WHERE f.id = :id
+            LIMIT 1
+        ");
         $stmt->execute(['id' => $id]);
         return $stmt->fetch();
     }

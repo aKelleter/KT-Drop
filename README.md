@@ -54,7 +54,14 @@ Application web de dépôt de fichiers auto-hébergée, développée en PHP nati
 - **Partages actifs** : liste globale de tous les liens non expirés avec révocation
 - **Statistiques** : vue d'ensemble des fichiers, tailles, extensions, activité, répartition par catégorie et **répartition par tranche de taille**
 - **Paramètres** : configuration des extensions autorisées via interface web (stockées en base)
+- **Tokens API** : génération et révocation des clés d'accès à l'API REST
 - Toutes les actions admin protégées CSRF et réservées au rôle `admin`
+
+### API REST
+- Authentification par **Bearer token** (header `Authorization: Bearer <token>`)
+- Tokens gérés depuis Administration → Tokens API (associés à un utilisateur)
+- Réponses JSON uniformes : `{ "data": ... }` / `{ "data": [], "meta": { ... } }` / `{ "error": "...", "code": N }`
+- Endpoints fichiers, catégories et statistiques (voir section dédiée ci-dessous)
 
 ---
 
@@ -208,6 +215,92 @@ Mot de passe : admin1234
 | Requêtes SQL | Requêtes préparées systématiques (0 concaténation) |
 | XSS | `htmlspecialchars()` sur toutes les sorties via `View::e()` |
 
+### API REST
+| Mécanisme | Détail |
+|---|---|
+| Authentification | Bearer token (64 chars hex) stocké en base, associé à un utilisateur |
+| Pas de CSRF | Remplacé par le Bearer token sur toutes les routes `/api/` |
+| Expiration | Aucune — révocation manuelle depuis l'interface admin |
+| Mise à jour `last_used_at` | Horodatage à chaque requête authentifiée |
+
+---
+
+## API REST
+
+L'API est accessible sous le préfixe `/api/v1/`. Chaque requête doit inclure le header :
+
+```
+Authorization: Bearer <votre-token>
+```
+
+Les tokens se gèrent depuis **Administration → Tokens API**.
+
+### Endpoints
+
+| Méthode | Endpoint | Paramètres | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/files` | `page`, `search`, `category` | Liste paginée (20 / page) |
+| `GET` | `/api/v1/files/all` | `search`, `category` | Tous les fichiers sans pagination |
+| `GET` | `/api/v1/files/{id}` | — | Détail d'un fichier |
+| `POST` | `/api/v1/files` | `file`, `category_id` | Upload (multipart/form-data) |
+| `PATCH` | `/api/v1/files/{id}` | `name`, `category_id` | Modifier nom / catégorie |
+| `DELETE` | `/api/v1/files/{id}` | — | Supprimer un fichier |
+| `GET` | `/api/v1/categories` | — | Liste des catégories |
+| `GET` | `/api/v1/categories/{id}` | — | Détail d'une catégorie |
+| `POST` | `/api/v1/categories` | `name`, `color` | Créer une catégorie (admin) |
+| `PATCH` | `/api/v1/categories/{id}` | `name`, `color` | Modifier une catégorie (admin) |
+| `DELETE` | `/api/v1/categories/{id}` | — | Supprimer une catégorie (admin) |
+| `GET` | `/api/v1/stats` | — | Statistiques globales (admin) |
+
+### Exemples curl
+
+```bash
+# Liste paginée
+curl -H "Authorization: Bearer <token>" "/api/v1/files?page=2"
+
+# Recherche
+curl -H "Authorization: Bearer <token>" "/api/v1/files?search=rapport"
+
+# Filtrer par catégorie (id=3)
+curl -H "Authorization: Bearer <token>" "/api/v1/files?category=3"
+
+# Combiner les filtres
+curl -H "Authorization: Bearer <token>" "/api/v1/files?search=doc&category=3&page=1"
+
+# Tous les fichiers d'une catégorie (sans pagination)
+curl -H "Authorization: Bearer <token>" "/api/v1/files/all?category=3"
+
+# Upload d'un fichier
+curl -X POST -H "Authorization: Bearer <token>" \
+     -F "file=@/chemin/vers/fichier.pdf" -F "category_id=2" \
+     "/api/v1/files"
+
+# Modifier un fichier
+curl -X PATCH -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json" \
+     -d '{"name":"archive.zip","category_id":2}' \
+     "/api/v1/files/42"
+
+# Supprimer un fichier
+curl -X DELETE -H "Authorization: Bearer <token>" "/api/v1/files/42"
+```
+
+### Format des réponses
+
+```json
+// Liste paginée
+{
+    "data": [ { "id": 1, "name": "fichier.pdf", ... } ],
+    "meta": { "total": 42, "page": 1, "per_page": 20, "total_pages": 3 }
+}
+
+// Ressource unique
+{ "data": { "id": 1, "name": "fichier.pdf", ... } }
+
+// Erreur
+{ "error": "Fichier introuvable", "code": 404 }
+```
+
 ---
 
 ## Upload de gros fichiers (chunked upload)
@@ -278,11 +371,18 @@ KT-Drop/
 ├── src/
 │   ├── Config/Config.php              # Accès aux variables d'environnement
 │   ├── Controller/
-│   │   ├── AdminController.php        # Dashboard, utilisateurs, catégories, partages, stats, paramètres
+│   │   ├── Api/
+│   │   │   ├── BaseApiController.php  # Auth Bearer token, lecture body JSON
+│   │   │   ├── CategoryApiController.php # CRUD catégories via API
+│   │   │   ├── FileApiController.php  # CRUD fichiers via API
+│   │   │   └── StatsApiController.php # Statistiques via API
+│   │   ├── AdminController.php        # Dashboard, utilisateurs, catégories, partages, stats, paramètres, tokens API
 │   │   ├── AuthController.php         # Connexion / déconnexion
 │   │   ├── FileController.php         # Upload, modification, téléchargement, suppression, prévisualisation
 │   │   └── ShareController.php        # Création, révocation, accès public
 │   ├── Core/
+│   │   ├── ApiResponse.php            # Réponses JSON uniformes (json, paginated, error, noContent)
+│   │   ├── ApiRouter.php              # Routeur API avec extraction des paramètres d'URL
 │   │   ├── Auth.php                   # Session, rôles (isAdmin)
 │   │   ├── Csrf.php
 │   │   ├── Database.php               # Singleton PDO SQLite
@@ -291,6 +391,7 @@ KT-Drop/
 │   │   ├── Router.php
 │   │   └── View.php                   # Rendu, échappement, utilitaires fichiers
 │   ├── Repository/
+│   │   ├── ApiTokenRepository.php     # CRUD tokens API
 │   │   ├── CategoryRepository.php     # CRUD catégories
 │   │   ├── FileRepository.php         # Fichiers avec filtre catégorie et mise à jour
 │   │   ├── SettingsRepository.php     # Clé/valeur en base (extensions, etc.)
@@ -307,6 +408,7 @@ KT-Drop/
 ├── templates/
 │   ├── layout.php                     # Navbar (Fichiers / Administration / Déconnexion)
 │   ├── admin/
+│   │   ├── api-tokens.php             # Gestion des tokens API
 │   │   ├── categories.php             # Gestion des catégories
 │   │   ├── dashboard.php              # Accueil administration (cartes modules)
 │   │   ├── settings.php               # Gestion des extensions autorisées
@@ -339,6 +441,7 @@ KT-Drop/
 | `categories` | Catégories de fichiers (nom, couleur) |
 | `shares` | Liens de partage (token, expiration, auteur) |
 | `settings` | Configuration applicative clé/valeur |
+| `api_tokens` | Tokens d'accès à l'API REST (nom, token, user_id, last_used_at) |
 
 ---
 

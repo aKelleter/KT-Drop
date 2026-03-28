@@ -69,6 +69,17 @@ CREATE TABLE IF NOT EXISTS categories (
 );
 ");
 
+$pdo->exec("
+CREATE TABLE IF NOT EXISTS api_tokens (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name         TEXT    NOT NULL,
+    token        TEXT    NOT NULL UNIQUE,
+    last_used_at TEXT,
+    created_at   TEXT    NOT NULL
+);
+");
+
 // Ajout de category_id dans files si absent (idempotent)
 $cols = array_column(
     $pdo->query("PRAGMA table_info(files)")->fetchAll(PDO::FETCH_ASSOC),

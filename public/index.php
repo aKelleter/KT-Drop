@@ -66,7 +66,46 @@ use App\Controller\AdminController;
 use App\Controller\AuthController;
 use App\Controller\FileController;
 use App\Controller\ShareController;
+use App\Controller\Api\FileApiController;
+use App\Controller\Api\CategoryApiController;
+use App\Controller\Api\StatsApiController;
+use App\Core\ApiRouter;
 use App\Core\Router;
+
+// ── API routing ───────────────────────────────────────────────────────────────
+$_requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+// SCRIPT_NAME = /kt-drop/public/index.php → remonter 2 niveaux pour obtenir /kt-drop
+$_scriptBase  = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+$_apiPath     = $_scriptBase !== '' && str_starts_with($_requestPath, $_scriptBase)
+                  ? substr($_requestPath, strlen($_scriptBase))
+                  : $_requestPath;
+
+if (str_starts_with($_apiPath, '/api/')) {
+    $apiRouter = new ApiRouter();
+
+    $apiRouter->add('GET',    '/api/v1/files',              [FileApiController::class,     'index']);
+    $apiRouter->add('GET',    '/api/v1/files/all',          [FileApiController::class,     'all']);
+    $apiRouter->add('GET',    '/api/v1/files/{id}',         [FileApiController::class,     'show']);
+    $apiRouter->add('POST',   '/api/v1/files',              [FileApiController::class,     'store']);
+    $apiRouter->add('PATCH',  '/api/v1/files/{id}',         [FileApiController::class,     'update']);
+    $apiRouter->add('DELETE', '/api/v1/files/{id}',         [FileApiController::class,     'destroy']);
+
+    $apiRouter->add('GET',    '/api/v1/categories',         [CategoryApiController::class, 'index']);
+    $apiRouter->add('GET',    '/api/v1/categories/{id}',    [CategoryApiController::class, 'show']);
+    $apiRouter->add('POST',   '/api/v1/categories',         [CategoryApiController::class, 'store']);
+    $apiRouter->add('PATCH',  '/api/v1/categories/{id}',    [CategoryApiController::class, 'update']);
+    $apiRouter->add('DELETE', '/api/v1/categories/{id}',    [CategoryApiController::class, 'destroy']);
+
+    $apiRouter->add('GET',    '/api/v1/stats',              [StatsApiController::class,    'index']);
+
+    $apiRouter->dispatch(
+        strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET'),
+        $_apiPath
+    );
+    exit;
+}
+unset($_requestPath, $_scriptBase, $_apiPath);
+// ── End API routing ───────────────────────────────────────────────────────────
 
 $router = new Router();
 
@@ -99,6 +138,10 @@ $router->get('admin_categories', [AdminController::class, 'categories']);
 $router->post('admin_category_create', [AdminController::class, 'createCategory']);
 $router->post('admin_category_update', [AdminController::class, 'updateCategory']);
 $router->post('admin_category_delete', [AdminController::class, 'deleteCategory']);
+
+$router->get('admin_api_tokens', [AdminController::class, 'apiTokens']);
+$router->post('admin_api_token_create', [AdminController::class, 'createApiToken']);
+$router->post('admin_api_token_revoke', [AdminController::class, 'revokeApiToken']);
 
 $router->get('shares', [ShareController::class, 'list']);
 $router->post('share_create', [ShareController::class, 'create']);

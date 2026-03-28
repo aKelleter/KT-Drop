@@ -95,4 +95,20 @@ use App\Core\View;
         </a>
     </div>
 
+    <div class="col-sm-6 col-lg-4">
+        <a href="?action=admin_api_tokens" class="admin-module-card card app-card shadow-soft text-decoration-none h-100">
+            <div class="card-body d-flex align-items-start gap-3 p-4">
+                <div class="admin-module-icon">
+                    <i class="bi bi-key"></i>
+                </div>
+                <div>
+                    <div class="fw-semibold admin-module-title">Tokens API</div>
+                    <div class="small app-muted mt-1">
+                        Générer et révoquer les clés d'accès à l'API REST.
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
 </div>
