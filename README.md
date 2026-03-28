@@ -55,6 +55,7 @@ Application web de dépôt de fichiers auto-hébergée, développée en PHP nati
 - **Statistiques** : vue d'ensemble des fichiers, tailles, extensions, activité, répartition par catégorie et **répartition par tranche de taille**
 - **Paramètres** : configuration des extensions autorisées via interface web (stockées en base)
 - **Tokens API** : génération et révocation des clés d'accès à l'API REST
+- **Maintenance** : bouton de migration de base de données depuis l'interface (sans accès SSH) — opération idempotente, sans risque pour les données
 - Toutes les actions admin protégées CSRF et réservées au rôle `admin`
 
 ### API REST
@@ -448,6 +449,8 @@ KT-Drop/
 ## Vérifications au démarrage (pre-flight)
 
 Avant tout chargement du framework, `public/index.php` effectue trois contrôles et affiche une page d'erreur explicite en cas de problème :
+
+La migration peut aussi être lancée depuis **Administration → Paramètres → Maintenance** sans accès SSH, avec le même comportement idempotent.
 
 | Contrôle | Cause | Message affiché |
 |---|---|---|
