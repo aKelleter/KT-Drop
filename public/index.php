@@ -127,6 +127,7 @@ $router->get('files-list', [FileController::class, 'simpleList']);
 $router->get('admin', [AdminController::class, 'dashboard']);
 $router->get('admin_settings', [AdminController::class, 'settings']);
 $router->post('admin_settings_save', [AdminController::class, 'saveSettings']);
+$router->post('admin_run_migration', [AdminController::class, 'runMigration']);
 $router->get('admin_stats', [AdminController::class, 'stats']);
 $router->get('admin_shares', [AdminController::class, 'shares']);
 $router->get('admin_users', [AdminController::class, 'users']);

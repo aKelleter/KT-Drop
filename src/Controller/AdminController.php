@@ -367,6 +367,89 @@ final class AdminController
         Response::redirect('?action=admin_categories');
     }
 
+    public function runMigration(): void
+    {
+        $this->requireAdmin();
+
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            Flash::set('danger', 'Jeton CSRF invalide.');
+            Response::redirect('?action=admin_settings');
+        }
+
+        try {
+            $pdo = \App\Core\Database::connection();
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'admin',
+                created_at TEXT NOT NULL
+            )");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS files (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                original_name TEXT NOT NULL,
+                stored_name TEXT NOT NULL,
+                mime_type TEXT NOT NULL,
+                extension TEXT,
+                size_bytes INTEGER NOT NULL,
+                sha256 TEXT NOT NULL,
+                storage_path TEXT NOT NULL,
+                uploaded_by INTEGER NOT NULL,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY(uploaded_by) REFERENCES users(id)
+            )");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS shares (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                file_id INTEGER NOT NULL,
+                token TEXT NOT NULL UNIQUE,
+                expires_at TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                created_by INTEGER NOT NULL,
+                FOREIGN KEY(file_id) REFERENCES files(id),
+                FOREIGN KEY(created_by) REFERENCES users(id)
+            )");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS settings (
+                key   TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS categories (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                name       TEXT NOT NULL UNIQUE,
+                color      TEXT NOT NULL DEFAULT '#6c757d',
+                created_at TEXT NOT NULL
+            )");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS api_tokens (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                name         TEXT    NOT NULL,
+                token        TEXT    NOT NULL UNIQUE,
+                last_used_at TEXT,
+                created_at   TEXT    NOT NULL
+            )");
+
+            // Migrations de colonnes idempotentes
+            $cols = array_column(
+                $pdo->query("PRAGMA table_info(files)")->fetchAll(\PDO::FETCH_ASSOC),
+                'name'
+            );
+            if (!in_array('category_id', $cols, true)) {
+                $pdo->exec("ALTER TABLE files ADD COLUMN category_id INTEGER REFERENCES categories(id)");
+            }
+
+            Flash::set('success', 'Migration exécutée avec succès. La base de données est à jour.');
+        } catch (\Throwable $e) {
+            Flash::set('danger', 'Erreur lors de la migration : ' . $e->getMessage());
+        }
+
+        Response::redirect('?action=admin_settings');
+    }
+
     public function apiTokens(): void
     {
         $this->requireAdmin();

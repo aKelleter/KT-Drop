@@ -79,6 +79,31 @@ sort($extensions);
     </div>
 </form>
 
+<!-- Maintenance -->
+<div class="card app-card shadow-soft mt-4">
+    <div class="card-header fw-semibold">
+        <i class="bi bi-tools me-1"></i> Maintenance
+    </div>
+    <div class="card-body">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+            <div>
+                <div class="fw-semibold small mb-1">Mise à jour de la base de données</div>
+                <p class="small app-muted mb-0">
+                    Exécute les migrations idempotentes (<code>init_db.php</code>) : crée les tables manquantes,
+                    ajoute les colonnes absentes. Sans effet sur les données existantes.
+                </p>
+            </div>
+            <form method="post" action="?action=admin_run_migration"
+                  onsubmit="return confirm('Lancer la migration de la base de données ?')">
+                <input type="hidden" name="_csrf" value="<?= View::e($csrf ?? '') ?>">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-database-gear me-1"></i> Lancer la migration
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 (function () {
     const tagsContainer = document.getElementById('ext-tags');
